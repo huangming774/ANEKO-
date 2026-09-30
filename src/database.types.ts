@@ -339,6 +339,7 @@ export type Database = {
           new_member_notification: boolean
           new_work_notification: boolean
           open_registration: boolean
+          redis_enabled: boolean
           site_description: string
           site_title: string
           updated_at: string
@@ -357,6 +358,7 @@ export type Database = {
           new_member_notification?: boolean
           new_work_notification?: boolean
           open_registration?: boolean
+          redis_enabled?: boolean
           site_description?: string
           site_title?: string
           updated_at?: string
@@ -375,6 +377,7 @@ export type Database = {
           new_member_notification?: boolean
           new_work_notification?: boolean
           open_registration?: boolean
+          redis_enabled?: boolean
           site_description?: string
           site_title?: string
           updated_at?: string

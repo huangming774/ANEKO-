@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, requireUser } from '@/lib/api-utils'
+import { clearCache } from '@/lib/cache'
 
 export async function POST(_request: Request, { params }: { params: { id: string } }) {
   const supabase = await createClient()
@@ -16,6 +17,7 @@ export async function POST(_request: Request, { params }: { params: { id: string
   if (existing) {
     const { error } = await supabase.from('work_likes').delete().eq('id', existing.id)
     if (error) return fail(normalizeSupabaseError(error), 500, error)
+    await clearCache('works')
     return ok({ liked: false })
   }
 
@@ -24,5 +26,6 @@ export async function POST(_request: Request, { params }: { params: { id: string
     return fail(normalizeSupabaseError(error), 500, error)
   }
 
+  await clearCache('works')
   return ok({ liked: true })
 }

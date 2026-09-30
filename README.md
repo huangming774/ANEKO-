@@ -83,7 +83,7 @@ ANEKO 动漫社官方网站与社团管理系统。包含面向公众的社团�
 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | R2 API 凭据 |
 | `R2_BUCKET_NAME` | R2 存储桶名称 |
 | `R2_PUBLIC_URL` | R2 公开访问域名（用于图片 URL 拼接） |
-| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis（可选，用于缓存） |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis（可选，用于缓存；后台设置页可开关） |
 
 > 注意：`.env.local` 包含敏感凭据，已在 `.gitignore` 中忽略，**请勿提交到仓库**。
 

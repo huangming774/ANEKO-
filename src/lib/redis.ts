@@ -16,6 +16,25 @@ const redis = new Redis({
 
 export default redis;
 
+// ====== 配置检测 ======
+
+/** 环境变量是否已配置（零 I/O）；未配置时所有 Redis 调用方应直接降级为直连数据库 */
+export function hasRedisConfig() {
+  return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+}
+
+// KEYS 是 O(N)：仅当 Upstash 实例专用于本项目、keyspace 只有 cache:* 短 TTL 键时使用
+export async function redisKeys(pattern: string): Promise<string[]> {
+  return redis.keys(pattern);
+}
+
+export async function redisDelMany(keys: string[]) {
+  if (keys.length === 0) {
+    return 0;
+  }
+  return redis.del(...keys);
+}
+
 // ====== 常用操作封装 ======
 
 // --- 字符串操作 ---

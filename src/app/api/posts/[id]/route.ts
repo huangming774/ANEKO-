@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, requireAdmin } from '@/lib/api-utils'
+import { clearCache } from '@/lib/cache'
 
 function normalizePostError(error: { message?: string; code?: string }) {
   if (error.code === 'PGRST204' || error.message?.includes("'image'")) {
@@ -121,6 +122,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return fail(normalizePostError(error), 500, error)
   }
 
+  await clearCache('posts')
   return ok(data ? { ...data, image: 'image' in data ? data.image : '' } : data)
 }
 
@@ -135,5 +137,6 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
     return fail(normalizeSupabaseError(error), 500, error)
   }
 
+  await clearCache('posts')
   return ok({ success: true })
 }

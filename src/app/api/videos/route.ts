@@ -2,36 +2,43 @@ import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, requireAdmin } from '@/lib/api-utils'
 import { extractBilibiliBvid } from '@/lib/video'
 import { fetchBilibiliVideoInfo } from '@/lib/bilibili'
+import { cachedJSON, clearCache } from '@/lib/cache'
 
 export async function GET(request: Request) {
   const supabase = await createClient()
   const { searchParams } = new URL(request.url)
   const all = searchParams.get('all') === '1'
 
+  const load = async (): Promise<Response> => {
+    let query = supabase
+      .from('videos')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (!all) {
+      query = query.eq('is_active', true)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      if (!all && (error.code === '42P01' || error.code === 'PGRST205')) {
+        return ok([])
+      }
+      return fail(normalizeSupabaseError(error), 500, error)
+    }
+
+    return ok(data || [])
+  }
+
   if (all) {
+    // 管理员变体：永不过缓存
     const auth = await requireAdmin(supabase)
     if (auth.response) return auth.response
+    return load()
   }
 
-  let query = supabase
-    .from('videos')
-    .select('*')
-    .order('created_at', { ascending: false })
-
-  if (!all) {
-    query = query.eq('is_active', true)
-  }
-
-  const { data, error } = await query
-
-  if (error) {
-    if (!all && (error.code === '42P01' || error.code === 'PGRST205')) {
-      return ok([])
-    }
-    return fail(normalizeSupabaseError(error), 500, error)
-  }
-
-  return ok(data || [])
+  return cachedJSON(supabase, 'cache:videos:public', load)
 }
 
 export async function POST(request: Request) {
@@ -94,5 +101,6 @@ export async function POST(request: Request) {
     return fail(normalizeSupabaseError(error), 500, error)
   }
 
+  await clearCache('videos')
   return ok(data, { status: 201 })
 }

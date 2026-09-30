@@ -1,15 +1,19 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, requireAdmin } from '@/lib/api-utils'
+import { cachedJSON, clearCache } from '@/lib/cache'
 
 export async function GET() {
   const supabase = await createClient()
-  const { data, error } = await supabase.from('site_settings').select('*').eq('id', true).maybeSingle()
 
-  if (error) {
-    return fail(normalizeSupabaseError(error), 500, error)
-  }
+  return cachedJSON(supabase, 'cache:settings:row', async () => {
+    const { data, error } = await supabase.from('site_settings').select('*').eq('id', true).maybeSingle()
 
-  return ok(data)
+    if (error) {
+      return fail(normalizeSupabaseError(error), 500, error)
+    }
+
+    return ok(data)
+  })
 }
 
 export async function PATCH(request: Request) {
@@ -32,6 +36,7 @@ export async function PATCH(request: Request) {
     new_member_notification: body.new_member_notification,
     new_work_notification: body.new_work_notification,
     activity_reminder: body.activity_reminder,
+    redis_enabled: body.redis_enabled === undefined ? undefined : Boolean(body.redis_enabled),
   }
 
   const { data, error } = await supabase.from('site_settings').update(updates).eq('id', true).select().single()
@@ -40,5 +45,6 @@ export async function PATCH(request: Request) {
     return fail(normalizeSupabaseError(error), 500, error)
   }
 
+  await clearCache('settings')
   return ok(data)
 }

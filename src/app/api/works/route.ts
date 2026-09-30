@@ -1,23 +1,33 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, requireUser } from '@/lib/api-utils'
+import { cachedJSON, clearCache } from '@/lib/cache'
 
 export async function GET(request: Request) {
   const supabase = await createClient()
   const { searchParams } = new URL(request.url)
   const status = searchParams.get('status')
 
-  let query = supabase.from('works').select('*').order('created_at', { ascending: false })
-  if (status === 'pending' || status === 'approved' || status === 'rejected') {
-    query = query.eq('status', status)
+  const load = async (): Promise<Response> => {
+    let query = supabase.from('works').select('*').order('created_at', { ascending: false })
+    if (status === 'pending' || status === 'approved' || status === 'rejected') {
+      query = query.eq('status', status)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      return fail(normalizeSupabaseError(error), 500, error)
+    }
+
+    return ok(data || [])
   }
 
-  const { data, error } = await query
-
-  if (error) {
-    return fail(normalizeSupabaseError(error), 500, error)
+  // 仅缓存公开形态（status=approved）；裸请求是后台管理列表，保持实时
+  if (status !== 'approved') {
+    return load()
   }
 
-  return ok(data || [])
+  return cachedJSON(supabase, 'cache:works:approved', load)
 }
 
 export async function POST(request: Request) {
@@ -49,5 +59,6 @@ export async function POST(request: Request) {
     return fail(normalizeSupabaseError(error), 500, error)
   }
 
+  await clearCache('works')
   return ok(data, { status: 201 })
 }

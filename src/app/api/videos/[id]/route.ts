@@ -3,6 +3,7 @@ import { fail, normalizeSupabaseError, ok, readString, requireAdmin } from '@/li
 import { extractBilibiliBvid } from '@/lib/video'
 import { fetchBilibiliVideoInfo } from '@/lib/bilibili'
 import { deleteR2Object } from '@/lib/r2'
+import { clearCache } from '@/lib/cache'
 import type { Database } from '@/database.types'
 
 type VideoUpdate = Database['public']['Tables']['videos']['Update']
@@ -59,6 +60,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return fail(normalizeSupabaseError(error), 500, error)
   }
 
+  await clearCache('videos')
   return ok(data)
 }
 
@@ -91,5 +93,6 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
     }
   }
 
+  await clearCache('videos')
   return ok({ success: true })
 }

@@ -19,6 +19,7 @@ const defaults: Partial<SiteSettings> = {
   new_member_notification: true,
   new_work_notification: true,
   activity_reminder: false,
+  redis_enabled: false,
 }
 
 export default function SettingsPage() {
@@ -111,6 +112,14 @@ export default function SettingsPage() {
           <Toggle label="新成员通知" checked={Boolean(form.new_member_notification)} onChange={(v) => update('new_member_notification', v)} />
           <Toggle label="新作品通知" checked={Boolean(form.new_work_notification)} onChange={(v) => update('new_work_notification', v)} />
           <Toggle label="活动提醒" checked={Boolean(form.activity_reminder)} onChange={(v) => update('activity_reminder', v)} />
+        </Section>
+
+        <Section title="缓存">
+          <Toggle label="启用 Redis 缓存" checked={Boolean(form.redis_enabled)} onChange={(v) => update('redis_enabled', v)} />
+          <p className="text-xs leading-relaxed text-gray-500">
+            需先配置 UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN 环境变量，未配置时开关无效（自动直连数据库）。
+            开启后公开接口结果缓存约 60 秒，后台写入后立即失效；修改后需点击「保存设置」生效。
+          </p>
         </Section>
       </div>
 

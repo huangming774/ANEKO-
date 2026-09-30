@@ -1,15 +1,20 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, readStringArray, requireAdmin } from '@/lib/api-utils'
+import { cachedJSON, clearCache } from '@/lib/cache'
 
 export async function GET() {
   const supabase = await createClient()
-  const { data, error } = await supabase.from('events').select('*').order('start_date', { ascending: true })
 
-  if (error) {
-    return fail(normalizeSupabaseError(error), 500, error)
-  }
+  // 注意：后台与前台共用此端点，缓存由写入即时失效 + TTL 兜底
+  return cachedJSON(supabase, 'cache:events:all', async () => {
+    const { data, error } = await supabase.from('events').select('*').order('start_date', { ascending: true })
 
-  return ok(data || [])
+    if (error) {
+      return fail(normalizeSupabaseError(error), 500, error)
+    }
+
+    return ok(data || [])
+  })
 }
 
 export async function POST(request: Request) {
@@ -49,5 +54,6 @@ export async function POST(request: Request) {
     return fail(normalizeSupabaseError(error), 500, error)
   }
 
+  await clearCache('events')
   return ok(data, { status: 201 })
 }

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, requireAdmin } from '@/lib/api-utils'
+import { cachedJSON, clearCache } from '@/lib/cache'
 
 function normalizePostError(error: { message?: string; code?: string }) {
   if (error.code === 'PGRST204' || error.message?.includes("'image'")) {
@@ -30,49 +31,58 @@ export async function GET(request: Request) {
   const status = searchParams.get('status')
   const limit = Number(searchParams.get('limit')) || 0
 
-  let query = supabase
-    .from('posts')
-    .select('*')
-    .order('pinned', { ascending: false })
-    .order('created_at', { ascending: false })
+  const load = async (): Promise<Response> => {
+    let query = supabase
+      .from('posts')
+      .select('*')
+      .order('pinned', { ascending: false })
+      .order('created_at', { ascending: false })
 
-  if (status === 'published' || status === 'draft') {
-    query = query.eq('status', status)
-  }
-
-  if (limit > 0) {
-    query = query.limit(limit)
-  }
-
-  const { data, error } = await query
-
-  if (error) {
-    if (error.code === 'PGRST204' || error.message?.includes("'image'")) {
-      const { data: legacyData, error: legacyError } = await supabase
-        .from('posts')
-        .select('id,title,content,author_id,category,status,pinned,views,published_at,created_at,updated_at')
-        .order('pinned', { ascending: false })
-        .order('created_at', { ascending: false })
-
-      if (legacyError) {
-        return fail(normalizePostError(legacyError), 500, legacyError)
-      }
-
-      let rows = legacyData || []
-      if (status === 'published' || status === 'draft') {
-        rows = rows.filter((post) => post.status === status)
-      }
-      if (limit > 0) {
-        rows = rows.slice(0, limit)
-      }
-
-      return ok(rows.map((post) => ({ ...post, image: '' })))
+    if (status === 'published' || status === 'draft') {
+      query = query.eq('status', status)
     }
 
-    return fail(normalizePostError(error), 500, error)
+    if (limit > 0) {
+      query = query.limit(limit)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      if (error.code === 'PGRST204' || error.message?.includes("'image'")) {
+        const { data: legacyData, error: legacyError } = await supabase
+          .from('posts')
+          .select('id,title,content,author_id,category,status,pinned,views,published_at,created_at,updated_at')
+          .order('pinned', { ascending: false })
+          .order('created_at', { ascending: false })
+
+        if (legacyError) {
+          return fail(normalizePostError(legacyError), 500, legacyError)
+        }
+
+        let rows = legacyData || []
+        if (status === 'published' || status === 'draft') {
+          rows = rows.filter((post) => post.status === status)
+        }
+        if (limit > 0) {
+          rows = rows.slice(0, limit)
+        }
+
+        return ok(rows.map((post) => ({ ...post, image: '' })))
+      }
+
+      return fail(normalizePostError(error), 500, error)
+    }
+
+    return ok(data || [])
   }
 
-  return ok(data || [])
+  // 仅缓存公开形态（status=published）；裸请求是后台管理列表，保持实时
+  if (status !== 'published') {
+    return load()
+  }
+
+  return cachedJSON(supabase, `cache:posts:published:${limit}`, load)
 }
 
 export async function POST(request: Request) {
@@ -134,6 +144,7 @@ export async function POST(request: Request) {
     return fail(normalizePostError(error), 500, error)
   }
 
+  await clearCache('posts')
   return ok(data ? { ...data, image: 'image' in data ? data.image : '' } : data, { status: 201 })
 }
 

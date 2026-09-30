@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, readStringArray, requireAdmin } from '@/lib/api-utils'
+import { clearCache } from '@/lib/cache'
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   const supabase = await createClient()
@@ -29,6 +30,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return fail(normalizeSupabaseError(error), 500, error)
   }
 
+  await clearCache('events')
   return ok(data)
 }
 
@@ -43,5 +45,6 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
     return fail(normalizeSupabaseError(error), 500, error)
   }
 
+  await clearCache('events')
   return ok({ success: true })
 }

@@ -113,6 +113,7 @@ export type SiteSettings = {
   site_description: string
   announcement_banner: boolean
   open_registration: boolean
+  redis_enabled: boolean
   email_notification: boolean
   new_member_notification: boolean
   new_work_notification: boolean
