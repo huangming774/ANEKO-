@@ -25,12 +25,19 @@ const defaults: Partial<SiteSettings> = {
 export default function SettingsPage() {
   const [form, setForm] = useState<Partial<SiteSettings>>(defaults)
   const [message, setMessage] = useState('')
+  const [messageType, setMessageType] = useState<'success' | 'error' | 'info'>('info')
+  const [dirty, setDirty] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
+
+  const showMessage = (text: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setMessage(text)
+    setMessageType(type)
+  }
 
   useEffect(() => {
     apiRequest<SiteSettings | null>('/api/settings')
       .then((data) => data && setForm(data))
-      .catch((err) => setMessage(err instanceof Error ? err.message : '加载失败'))
+      .catch((err) => showMessage(err instanceof Error ? err.message : '加载失败', 'error'))
   }, [])
 
   const save = async () => {
@@ -41,14 +48,17 @@ export default function SettingsPage() {
         body: JSON.stringify(form),
       })
       setForm(data)
-      setMessage('保存成功')
+      setDirty(false)
+      showMessage('保存成功', 'success')
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : '保存失败')
+      showMessage(err instanceof Error ? err.message : '保存失败', 'error')
     }
   }
 
   const update = <K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) => {
     setForm((current) => ({ ...current, [key]: value }))
+    setDirty(true)
+    setMessage('')
   }
 
   const uploadLogo = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -68,9 +78,9 @@ export default function SettingsPage() {
       }
 
       update('logo_url', payload.data.url)
-      setMessage('Logo 已上传，记得保存设置')
+      showMessage('Logo 已上传，记得保存设置', 'info')
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : '上传失败')
+      showMessage(err instanceof Error ? err.message : '上传失败', 'error')
     } finally {
       setUploadingLogo(false)
       event.target.value = ''
@@ -89,7 +99,19 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {message && <div className="rounded-xl border border-[#2a2a4a] bg-[#1a1a2e] px-4 py-3 text-gray-200">{message}</div>}
+      {message && (
+        <div
+          className={`rounded-xl border px-4 py-3 text-sm ${
+            messageType === 'error'
+              ? 'border-red-500/40 bg-red-500/10 text-red-300'
+              : messageType === 'success'
+                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                : 'border-[#2a2a4a] bg-[#1a1a2e] text-gray-200'
+          }`}
+        >
+          {message}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Section title="基本信息">
@@ -123,14 +145,23 @@ export default function SettingsPage() {
         </Section>
       </div>
 
-      <div className="fixed bottom-8 right-8 z-40">
+      <div className="fixed bottom-8 right-8 z-40 flex items-center gap-3">
+        {dirty && message === '' && (
+          <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300 shadow-lg">
+            有未保存的修改，记得点击「保存设置」
+          </div>
+        )}
         <button
           onClick={save}
           type="button"
-          className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-anime-pink to-anime-purple px-6 py-3 font-medium text-white shadow-lg shadow-anime-pink/25"
+          className={`flex items-center gap-2 rounded-2xl px-6 py-3 font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 ${
+            messageType === 'success' && message !== ''
+              ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-emerald-500/25'
+              : 'bg-gradient-to-r from-anime-pink to-anime-purple shadow-anime-pink/25'
+          }`}
         >
           <Save size={18} />
-          保存设置
+          {messageType === 'success' && message !== '' ? '已保存' : '保存设置'}
         </button>
       </div>
     </div>
