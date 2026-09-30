@@ -22,6 +22,7 @@ ANEKO 动漫社官方网站与社团管理系统。包含面向公众的社团�
 - **社团介绍** `/about`
 - **活动日历** `/events`：活动列表与日历视图、在线报名
 - **作品展示** `/gallery`：插画 / 摄影 / Cosplay / 视频 / 手工作品，支持点赞
+- **视频** `/videos`：上传的社团视频与哔哩哔哩视频，弹窗播放
 - **作品投稿** `/upload`：登录用户可上传作品（图片存入 Cloudflare R2）
 - **新闻详情** `/posts/[id]`：公告 / 活动 / 分享 / 通知
 - **入社申请** `/join`：在线填写入社申请表
@@ -33,6 +34,7 @@ ANEKO 动漫社官方网站与社团管理系统。包含面向公众的社团�
 - **内容管理**：文章发布（草稿 / 发布、置顶、分类）
 - **活动管理**：活动创建与编辑、报名名单管理
 - **作品审核**：投稿的审核（通过 / 拒绝）
+- **视频管理**：上传视频到 R2（预签名直传，最大 500MB）或添加哔哩哔哩视频链接
 - **申请处理**：入社申请、活动报名的审批
 - **轮播管理**：首页 Hero 轮播图配置
 - **站点设置**：社团名称、Logo、联系方式、公告横幅、注册开关等
@@ -92,7 +94,7 @@ ANEKO 动漫社官方网站与社团管理系统。包含面向公众的社团�
 1. `supabase/migrations/20260618133000_init_aneko_schema.sql` —— 建表、触发器、RLS 策略
 2. `supabase/manual_sql/` 目录下的补充 SQL（按文件名日期顺序执行）
 
-主要数据表：`profiles`、`posts`、`events`、`event_registrations`、`event_applications`、`works`、`work_likes`、`join_applications`、`hero_slides`、`site_settings`。
+主要数据表：`profiles`、`posts`、`events`、`event_registrations`、`event_applications`、`works`、`work_likes`、`join_applications`、`hero_slides`、`videos`、`site_settings`。
 
 新用户注册后由数据库触发器 `handle_new_user` 自动创建 `profiles` 记录。
 
@@ -129,6 +131,31 @@ npm run dev
 - 限制：仅支持 JPG / PNG / WebP / GIF，单文件最大 8 MB
 - 文件经服务端写入 Cloudflare R2，返回 `R2_PUBLIC_URL` 下的公开地址
 - 可运行 `node scripts/test-r2-upload.mjs` 验证 R2 配置是否正确
+
+## 视频功能
+
+- 后台「视频管理」支持两种来源：**上传视频文件**（浏览器经预签名 URL 直传 R2，不经过 Next.js 服务器）或**哔哩哔哩链接**（自动提取 BV 号，前台 iframe 播放）
+- 添加 B 站链接时会自动获取官方封面、标题和简介填入表单（也可手动点「自动获取封面和标题」按钮）
+- 上传限制：MP4 / WebM / MOV / MKV，单文件最大 500MB（推荐 MP4/H.264 以保证浏览器兼容）
+- 流程：`POST /api/videos/upload-url`（管理员）签发预签名 PUT 地址 → 浏览器直传 R2 → `POST /api/videos` 保存记录；删除视频记录时会同步清理 R2 文件
+
+### Cloudflare R2 CORS 配置（视频直传必需）
+
+浏览器直传 R2 走的是跨域请求，必须在 Cloudflare 控制台 → R2 存储桶 → Settings → CORS policy 中添加以下规则（替换为你的生产域名；现有图片上传走服务端、不需要此配置）：
+
+```json
+[
+  {
+    "AllowedOrigins": ["http://localhost:3000", "https://YOUR_PRODUCTION_ORIGIN"],
+    "AllowedMethods": ["PUT", "GET", "HEAD"],
+    "AllowedHeaders": ["Content-Type", "content-length", "x-amz-*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+未配置时的症状：后台上传视频浏览器报 CORS 错误（服务端无任何日志）。
 
 ## 部署
 

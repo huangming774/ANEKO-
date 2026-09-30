@@ -10,9 +10,13 @@ const navItems = [
   { name: '关于我们', href: '/about' },
   { name: '活动日历', href: '/events' },
   { name: '作品展示', href: '/gallery' },
+  { name: '视频', href: '/videos' },
   { name: '上传作品', href: '/upload' },
   { name: '加入我们', href: '/join' },
+  { name: 'Galgame游戏', href: 'https://js.miku.coffee/' },
 ]
+
+const isExternalHref = (href: string) => /^https?:\/\//.test(href)
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -67,6 +71,8 @@ export default function Header() {
               <a
                 key={item.name}
                 href={item.href}
+                target={isExternalHref(item.href) ? '_blank' : undefined}
+                rel={isExternalHref(item.href) ? 'noopener noreferrer' : undefined}
                 className={`font-medium transition-all duration-300 hover:scale-105 ${
                   isScrolled ? 'text-gray-700 hover:text-anime-pink' : 'text-white/90 hover:text-white'
                 }`}
@@ -110,6 +116,8 @@ export default function Header() {
                 <a
                   key={item.name}
                   href={item.href}
+                  target={isExternalHref(item.href) ? '_blank' : undefined}
+                  rel={isExternalHref(item.href) ? 'noopener noreferrer' : undefined}
                   className="block rounded-lg px-3 py-2 text-gray-700 transition-colors duration-300 hover:bg-anime-pink/10 hover:text-anime-pink"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >

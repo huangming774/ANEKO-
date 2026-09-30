@@ -132,3 +132,19 @@ export type HeroSlide = {
   created_at: string
   updated_at: string
 }
+
+export type VideoSourceType = 'upload' | 'bilibili'
+
+export type Video = {
+  id: string
+  title: string
+  description: string
+  cover: string
+  source_type: VideoSourceType
+  source_url: string
+  r2_key: string
+  bilibili_bvid: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}

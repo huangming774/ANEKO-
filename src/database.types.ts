@@ -381,6 +381,48 @@ export type Database = {
         }
         Relationships: []
       }
+      videos: {
+        Row: {
+          bilibili_bvid: string
+          cover: string
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          r2_key: string
+          source_type: string
+          source_url: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          bilibili_bvid?: string
+          cover?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          r2_key?: string
+          source_type: string
+          source_url?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          bilibili_bvid?: string
+          cover?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          r2_key?: string
+          source_type?: string
+          source_url?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       work_likes: {
         Row: {
           created_at: string

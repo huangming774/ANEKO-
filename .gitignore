@@ -4,3 +4,4 @@ out/
 .env*
 dev.pid
 supabase/.temp/
+*.tsbuildinfo

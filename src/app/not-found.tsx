@@ -120,7 +120,7 @@ export default function NotFound() {
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
         >
-          "即使迷路了也没关系，二次元的世界总有出路" —— ANEKO动漫社
+          “即使迷路了也没关系，二次元的世界总有出路” —— ANEKO动漫社
         </motion.p>
       </div>
     </div>

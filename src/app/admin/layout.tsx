@@ -19,6 +19,7 @@ import {
   Settings,
   UserPlus,
   Users,
+  Video,
 } from 'lucide-react'
 import { apiRequest } from '@/lib/client-api'
 
@@ -28,6 +29,7 @@ const sidebarMenu = [
   { id: 'applications', label: '报名管理', icon: <UserPlus size={20} />, href: '/admin/applications' },
   { id: 'slides', label: '首页轮播', icon: <ImagePlus size={20} />, href: '/admin/slides' },
   { id: 'works', label: '作品审核', icon: <Image size={20} />, href: '/admin/works' },
+  { id: 'videos', label: '视频管理', icon: <Video size={20} />, href: '/admin/videos' },
   { id: 'events', label: '活动管理', icon: <Calendar size={20} />, href: '/admin/events' },
   { id: 'posts', label: '公告管理', icon: <Megaphone size={20} />, href: '/admin/posts' },
   { id: 'settings', label: '系统设置', icon: <Settings size={20} />, href: '/admin/settings' },
