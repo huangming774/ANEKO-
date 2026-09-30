@@ -1,0 +1,209 @@
+'use client'
+
+import { ChangeEvent, useEffect, useState } from 'react'
+import { ImagePlus, Save, Settings } from 'lucide-react'
+import { apiRequest } from '@/lib/client-api'
+import type { SiteSettings } from '@/lib/app-types'
+
+const defaults: Partial<SiteSettings> = {
+  club_name: 'ANEKO动漫社',
+  club_description: '',
+  logo_url: '',
+  contact_email: '',
+  contact_phone: '',
+  site_title: 'ANEKO动漫社',
+  site_description: 'ANEKO动漫社官方网站',
+  announcement_banner: true,
+  open_registration: true,
+  email_notification: true,
+  new_member_notification: true,
+  new_work_notification: true,
+  activity_reminder: false,
+}
+
+export default function SettingsPage() {
+  const [form, setForm] = useState<Partial<SiteSettings>>(defaults)
+  const [message, setMessage] = useState('')
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+
+  useEffect(() => {
+    apiRequest<SiteSettings | null>('/api/settings')
+      .then((data) => data && setForm(data))
+      .catch((err) => setMessage(err instanceof Error ? err.message : '加载失败'))
+  }, [])
+
+  const save = async () => {
+    setMessage('')
+    try {
+      const data = await apiRequest<SiteSettings>('/api/settings', {
+        method: 'PATCH',
+        body: JSON.stringify(form),
+      })
+      setForm(data)
+      setMessage('保存成功')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : '保存失败')
+    }
+  }
+
+  const update = <K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) => {
+    setForm((current) => ({ ...current, [key]: value }))
+  }
+
+  const uploadLogo = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setUploadingLogo(true)
+    setMessage('')
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const response = await fetch('/api/upload', { method: 'POST', body: formData })
+      const payload = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        throw new Error(payload.error || '上传失败')
+      }
+
+      update('logo_url', payload.data.url)
+      setMessage('Logo 已上传，记得保存设置')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : '上传失败')
+    } finally {
+      setUploadingLogo(false)
+      event.target.value = ''
+    }
+  }
+
+  return (
+    <div className="space-y-6 pb-24">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-anime-pink to-anime-purple">
+          <Settings size={20} className="text-white" />
+        </div>
+        <div>
+          <h1 className="text-xl font-bold text-white">系统设置</h1>
+          <p className="text-sm text-gray-500">管理社团信息、网站配置和通知偏好</p>
+        </div>
+      </div>
+
+      {message && <div className="rounded-xl border border-[#2a2a4a] bg-[#1a1a2e] px-4 py-3 text-gray-200">{message}</div>}
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <Section title="基本信息">
+          <Input label="社团名称" value={form.club_name || ''} onChange={(v) => update('club_name', v)} />
+          <Textarea label="社团简介" value={form.club_description || ''} onChange={(v) => update('club_description', v)} />
+          <Input label="联系邮箱" value={form.contact_email || ''} onChange={(v) => update('contact_email', v)} />
+          <Input label="联系电话" value={form.contact_phone || ''} onChange={(v) => update('contact_phone', v)} />
+        </Section>
+
+        <Section title="网站设置">
+          <LogoUploader value={form.logo_url || ''} uploading={uploadingLogo} onUpload={uploadLogo} onChange={(v) => update('logo_url', v)} />
+          <Input label="网站标题" value={form.site_title || ''} onChange={(v) => update('site_title', v)} />
+          <Textarea label="网站描述" value={form.site_description || ''} onChange={(v) => update('site_description', v)} />
+          <Toggle label="公告横幅" checked={Boolean(form.announcement_banner)} onChange={(v) => update('announcement_banner', v)} />
+          <Toggle label="开放注册" checked={Boolean(form.open_registration)} onChange={(v) => update('open_registration', v)} />
+        </Section>
+
+        <Section title="通知设置">
+          <Toggle label="邮件通知" checked={Boolean(form.email_notification)} onChange={(v) => update('email_notification', v)} />
+          <Toggle label="新成员通知" checked={Boolean(form.new_member_notification)} onChange={(v) => update('new_member_notification', v)} />
+          <Toggle label="新作品通知" checked={Boolean(form.new_work_notification)} onChange={(v) => update('new_work_notification', v)} />
+          <Toggle label="活动提醒" checked={Boolean(form.activity_reminder)} onChange={(v) => update('activity_reminder', v)} />
+        </Section>
+      </div>
+
+      <div className="fixed bottom-8 right-8 z-40">
+        <button
+          onClick={save}
+          type="button"
+          className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-anime-pink to-anime-purple px-6 py-3 font-medium text-white shadow-lg shadow-anime-pink/25"
+        >
+          <Save size={18} />
+          保存设置
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-5 rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-6">
+      <h3 className="text-base font-semibold text-white">{title}</h3>
+      {children}
+    </div>
+  )
+}
+
+function LogoUploader({
+  value,
+  uploading,
+  onUpload,
+  onChange,
+}: {
+  value: string
+  uploading: boolean
+  onUpload: (event: ChangeEvent<HTMLInputElement>) => void
+  onChange: (value: string) => void
+}) {
+  return (
+    <div className="space-y-3">
+      <span className="block text-sm text-gray-400">左上角 Logo</span>
+      <div className="flex items-center gap-4">
+        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-[#2a2a4a] bg-[#0f0f1a] text-gray-500">
+          {value ? <img src={value} alt="Logo" className="h-full w-full object-cover" /> : <ImagePlus size={24} />}
+        </div>
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#0f0f1a] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#23233a]">
+          <ImagePlus size={16} />
+          {uploading ? '上传中...' : '上传图片'}
+          <input type="file" accept="image/*" className="hidden" onChange={onUpload} disabled={uploading} />
+        </label>
+      </div>
+      <Input label="Logo URL" value={value} onChange={onChange} />
+    </div>
+  )
+}
+
+function Input({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm text-gray-400">{label}</span>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-xl border border-[#2a2a4a] bg-[#0f0f1a] px-4 py-3 text-sm text-white focus:border-anime-pink focus:outline-none"
+      />
+    </label>
+  )
+}
+
+function Textarea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm text-gray-400">{label}</span>
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        rows={4}
+        className="w-full resize-none rounded-xl border border-[#2a2a4a] bg-[#0f0f1a] px-4 py-3 text-sm text-white focus:border-anime-pink focus:outline-none"
+      />
+    </label>
+  )
+}
+
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between py-2">
+      <span className="text-sm text-white">{label}</span>
+      <button
+        type="button"
+        onClick={() => onChange(!checked)}
+        className={`relative h-7 w-12 rounded-full transition-colors ${checked ? 'bg-anime-pink' : 'bg-[#2a2a4a]'}`}
+      >
+        <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${checked ? 'left-6' : 'left-1'}`} />
+      </button>
+    </div>
+  )
+}
