@@ -3,6 +3,7 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { Film, ImagePlus, Loader2, Pencil, Plus, Save, Trash2 } from 'lucide-react'
 import { apiRequest } from '@/lib/client-api'
+import { uploadImageFile } from '@/lib/client-upload'
 import type { Video, VideoSourceType } from '@/lib/app-types'
 import {
   ALLOWED_VIDEO_TYPES,
@@ -238,16 +239,7 @@ export default function AdminVideosPage() {
     setUploading(true)
     setMessage('')
     try {
-      const formData = new FormData()
-      formData.append('file', coverFile)
-      const response = await fetch('/api/upload', { method: 'POST', body: formData })
-      const payload = await response.json().catch(() => ({}))
-
-      if (!response.ok) {
-        throw new Error(payload.error || '上传失败')
-      }
-
-      update('cover', payload.data.url)
+      update('cover', await uploadImageFile(coverFile))
       showMessage('封面已上传，记得保存视频')
     } catch (err) {
       showMessage(err instanceof Error ? err.message : '上传失败', 'error')

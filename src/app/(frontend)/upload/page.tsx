@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Send, Upload } from 'lucide-react';
 import { apiRequest } from '@/lib/client-api';
+import { uploadImageFile } from '@/lib/client-upload';
 import type { WorkCategory } from '@/lib/app-types';
 
 const categories: Array<{ value: WorkCategory; label: string }> = [
@@ -25,21 +26,8 @@ export default function UploadWorkPage() {
     setError('');
     setUploadingImage(true);
 
-    const body = new FormData();
-    body.append('file', file);
-
     try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body,
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.error || '图片上传失败');
-      }
-
-      setImageUrl(payload.data.url);
+      setImageUrl(await uploadImageFile(file));
     } catch (err) {
       setError(err instanceof Error ? err.message : '图片上传失败');
     } finally {

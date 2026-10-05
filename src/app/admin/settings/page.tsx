@@ -3,6 +3,7 @@
 import { ChangeEvent, useEffect, useState } from 'react'
 import { ImagePlus, Save, Settings } from 'lucide-react'
 import { apiRequest } from '@/lib/client-api'
+import { uploadImageFile } from '@/lib/client-upload'
 import type { SiteSettings } from '@/lib/app-types'
 
 const defaults: Partial<SiteSettings> = {
@@ -64,16 +65,7 @@ export default function SettingsPage() {
     setUploadingLogo(true)
     setMessage('')
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      const response = await fetch('/api/upload', { method: 'POST', body: formData })
-      const payload = await response.json().catch(() => ({}))
-
-      if (!response.ok) {
-        throw new Error(payload.error || '上传失败')
-      }
-
-      update('logo_url', payload.data.url)
+      update('logo_url', await uploadImageFile(file))
       showMessage('Logo 已上传，记得保存设置', 'info')
     } catch (err) {
       showMessage(err instanceof Error ? err.message : '上传失败', 'error')

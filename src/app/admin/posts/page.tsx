@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react'
 import { ImagePlus, Loader2, Megaphone, Pencil, Pin, Save, Trash2 } from 'lucide-react'
 import { apiRequest } from '@/lib/client-api'
+import { uploadImageFile } from '@/lib/client-upload'
 import type { Post, PostCategory, PostStatus } from '@/lib/app-types'
 
 type PostForm = {
@@ -131,16 +132,7 @@ export default function PostsPage() {
     setUploading(true)
     setMessage('')
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      const response = await fetch('/api/upload', { method: 'POST', body: formData })
-      const payload = await response.json().catch(() => ({}))
-
-      if (!response.ok) {
-        throw new Error(payload.error || '上传失败')
-      }
-
-      update('image', payload.data.url)
+      update('image', await uploadImageFile(file))
       setMessage('图片已上传，记得保存公告')
     } catch (err) {
       setMessage(err instanceof Error ? err.message : '上传失败')
