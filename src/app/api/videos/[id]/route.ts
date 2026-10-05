@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, requireAdmin } from '@/lib/api-utils'
 import { extractBilibiliBvid } from '@/lib/video'
 import { fetchBilibiliVideoInfo } from '@/lib/bilibili'
-import { deleteR2Object } from '@/lib/r2'
+import { deleteR2Object, deleteR2ObjectByUrl } from '@/lib/r2'
 import { clearCache } from '@/lib/cache'
 import type { Database } from '@/database.types'
 
@@ -49,6 +49,13 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return fail('没有需要更新的内容')
   }
 
+  // 先取旧值，用于换源/换文件后清理 R2 孤儿对象
+  const { data: oldVideo } = await supabase
+    .from('videos')
+    .select('r2_key,cover')
+    .eq('id', params.id)
+    .maybeSingle()
+
   const { data, error } = await supabase
     .from('videos')
     .update(updates)
@@ -58,6 +65,18 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
   if (error) {
     return fail(normalizeSupabaseError(error), 500, error)
+  }
+
+  // DB 成功后再 best-effort 删旧对象（宁留孤儿不丢引用）
+  if (updates.r2_key !== undefined && oldVideo?.r2_key && updates.r2_key !== oldVideo.r2_key) {
+    try {
+      await deleteR2Object(oldVideo.r2_key)
+    } catch (r2Error) {
+      console.error('删除旧 R2 视频文件失败:', r2Error)
+    }
+  }
+  if (updates.cover !== undefined && oldVideo?.cover && updates.cover !== oldVideo.cover) {
+    await deleteR2ObjectByUrl(oldVideo.cover)
   }
 
   await clearCache('videos')
@@ -71,7 +90,7 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
 
   const { data: video, error: selectError } = await supabase
     .from('videos')
-    .select('r2_key')
+    .select('r2_key,cover')
     .eq('id', params.id)
     .single()
 
@@ -92,6 +111,7 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
       console.error('删除 R2 视频文件失败:', r2Error)
     }
   }
+  await deleteR2ObjectByUrl(video?.cover)
 
   await clearCache('videos')
   return ok({ success: true })

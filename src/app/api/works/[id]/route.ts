@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, requireAdmin, requireUser } from '@/lib/api-utils'
 import { clearCache } from '@/lib/cache'
+import { deleteR2ObjectByUrl } from '@/lib/r2'
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   const supabase = await createClient()
@@ -23,10 +24,17 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     status: body.status,
   }
 
+  // 先取旧图，改图后清理 R2 孤儿对象
+  const { data: oldWork } = await supabase.from('works').select('image').eq('id', params.id).maybeSingle()
+
   const { data, error } = await supabase.from('works').update(updates).eq('id', params.id).select().single()
 
   if (error) {
     return fail(normalizeSupabaseError(error), 500, error)
+  }
+
+  if (updates.image !== undefined && oldWork?.image && updates.image !== oldWork.image) {
+    await deleteR2ObjectByUrl(oldWork.image)
   }
 
   await clearCache('works')
@@ -42,11 +50,16 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
     if (userAuth.response) return userAuth.response
   }
 
+  // 先取旧图，删除记录后清理 R2 孤儿对象
+  const { data: oldWork } = await supabase.from('works').select('image').eq('id', params.id).maybeSingle()
+
   const { error } = await supabase.from('works').delete().eq('id', params.id)
 
   if (error) {
     return fail(normalizeSupabaseError(error), 500, error)
   }
+
+  await deleteR2ObjectByUrl(oldWork?.image)
 
   await clearCache('works')
   return ok({ success: true })

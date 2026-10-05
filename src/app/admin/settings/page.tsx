@@ -15,10 +15,6 @@ const defaults: Partial<SiteSettings> = {
   site_description: 'ANEKO动漫社官方网站',
   announcement_banner: true,
   open_registration: true,
-  email_notification: true,
-  new_member_notification: true,
-  new_work_notification: true,
-  activity_reminder: false,
   redis_enabled: false,
 }
 
@@ -95,7 +91,7 @@ export default function SettingsPage() {
         </div>
         <div>
           <h1 className="text-xl font-bold text-white">系统设置</h1>
-          <p className="text-sm text-gray-500">管理社团信息、网站配置和通知偏好</p>
+          <p className="text-sm text-gray-500">管理社团信息、网站配置和缓存开关</p>
         </div>
       </div>
 
@@ -127,13 +123,6 @@ export default function SettingsPage() {
           <Textarea label="网站描述" value={form.site_description || ''} onChange={(v) => update('site_description', v)} />
           <Toggle label="公告横幅" checked={Boolean(form.announcement_banner)} onChange={(v) => update('announcement_banner', v)} />
           <Toggle label="开放注册" checked={Boolean(form.open_registration)} onChange={(v) => update('open_registration', v)} />
-        </Section>
-
-        <Section title="通知设置">
-          <Toggle label="邮件通知" checked={Boolean(form.email_notification)} onChange={(v) => update('email_notification', v)} />
-          <Toggle label="新成员通知" checked={Boolean(form.new_member_notification)} onChange={(v) => update('new_member_notification', v)} />
-          <Toggle label="新作品通知" checked={Boolean(form.new_work_notification)} onChange={(v) => update('new_work_notification', v)} />
-          <Toggle label="活动提醒" checked={Boolean(form.activity_reminder)} onChange={(v) => update('activity_reminder', v)} />
         </Section>
 
         <Section title="缓存">

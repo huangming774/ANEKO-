@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
-  Bell,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -15,7 +14,6 @@ import {
   LayoutDashboard,
   LogOut,
   Megaphone,
-  Search,
   Settings,
   UserPlus,
   Users,
@@ -151,18 +149,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <p className="text-sm text-gray-400">欢迎回来，{profile?.display_name || profile?.email || '管理员'}</p>
             </div>
             <div className="flex items-center gap-4">
-              <div className="relative hidden md:block">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="搜索..."
-                  className="w-64 rounded-xl border border-[#2a2a4a] bg-[#1a1a2e] py-2 pl-10 pr-4 text-sm text-white placeholder-gray-500 transition-colors focus:border-anime-pink focus:outline-none"
-                />
-              </div>
-              <button type="button" className="relative rounded-xl border border-[#2a2a4a] bg-[#1a1a2e] p-2 text-gray-400 transition-colors hover:text-white">
-                <Bell size={18} />
-                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">3</span>
-              </button>
               <button
                 type="button"
                 onClick={logout}

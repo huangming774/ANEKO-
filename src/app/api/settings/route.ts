@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, requireAdmin } from '@/lib/api-utils'
 import { cachedJSON, clearCache } from '@/lib/cache'
+import { deleteR2ObjectByUrl } from '@/lib/r2'
 
 export async function GET() {
   const supabase = await createClient()
@@ -32,17 +33,21 @@ export async function PATCH(request: Request) {
     site_description: body.site_description === undefined ? undefined : readString(body.site_description),
     announcement_banner: body.announcement_banner,
     open_registration: body.open_registration,
-    email_notification: body.email_notification,
-    new_member_notification: body.new_member_notification,
-    new_work_notification: body.new_work_notification,
-    activity_reminder: body.activity_reminder,
     redis_enabled: body.redis_enabled === undefined ? undefined : Boolean(body.redis_enabled),
   }
+
+  // 先取旧 Logo，替换后清理 R2 孤儿对象
+  const { data: oldSettings } = await supabase.from('site_settings').select('logo_url').eq('id', true).maybeSingle()
 
   const { data, error } = await supabase.from('site_settings').update(updates).eq('id', true).select().single()
 
   if (error) {
     return fail(normalizeSupabaseError(error), 500, error)
+  }
+
+  // 仅当本次真的传了 logo_url 且与旧值不同才删旧图，避免误删
+  if (updates.logo_url !== undefined && oldSettings?.logo_url && updates.logo_url !== oldSettings.logo_url) {
+    await deleteR2ObjectByUrl(oldSettings.logo_url)
   }
 
   await clearCache('settings')

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Menu, X } from 'lucide-react'
 import { apiRequest } from '@/lib/client-api'
 import type { SiteSettings } from '@/lib/app-types'
+import AnnouncementBanner from '@/components/AnnouncementBanner'
 
 const navItems = [
   { name: '首页', href: '/' },
@@ -47,6 +48,7 @@ export default function Header() {
         isScrolled ? 'bg-white/90 shadow-lg backdrop-blur-md' : 'bg-transparent'
       }`}
     >
+      <AnnouncementBanner enabled={Boolean(settings?.announcement_banner)} />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <a href="/" className="flex min-w-0 items-center gap-2">

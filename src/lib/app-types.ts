@@ -114,6 +114,7 @@ export type SiteSettings = {
   announcement_banner: boolean
   open_registration: boolean
   redis_enabled: boolean
+  // 以下通知开关为 DB 保留列（UI/API 已不消费，预留未来通知功能），GET 仍会返回
   email_notification: boolean
   new_member_notification: boolean
   new_work_notification: boolean
