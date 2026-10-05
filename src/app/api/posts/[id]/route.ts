@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, requireAdmin } from '@/lib/api-utils'
 import { clearCache } from '@/lib/cache'
+import { deleteR2ObjectByUrl } from '@/lib/r2'
 
 function normalizePostError(error: { message?: string; code?: string }) {
   if (error.code === 'PGRST204' || error.message?.includes("'image'")) {
@@ -14,6 +15,14 @@ function normalizePostError(error: { message?: string; code?: string }) {
   return normalizeSupabaseError(error)
 }
 
+/**
+ * 历史 GBK 乱码分类映射（勿删）。
+ * '鍏憡/娲诲姩/鍒嗕韩/閫氱煡' 是早期 UTF-8 中文被按 GBK 误解码后写入 DB 的乱码值；
+ * posts_category_check 约束故意同时兼容正常中文与乱码取值
+ * （见 supabase/manual_sql/20260618_post_images.sql），本函数把正常中文映射成
+ * 库里已有的乱码值以通过旧形态约束。若未来做数据清理/收紧约束，
+ * 需同步删除本映射与下方的降级重试分支。
+ */
 function legacyCategory(category: unknown) {
   const value = readString(category)
   const map: Record<string, string> = {
@@ -88,6 +97,10 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 
   const cleanUpdates = omitUndefined(updates)
+  // 先取旧图，改图后清理 R2 孤儿对象
+  const { data: oldPost } = await supabase.from('posts').select('image').eq('id', params.id).maybeSingle()
+  // 降级重试链（兼容历史库形态）：①原样 ②分类改乱码 ③去掉 image 列 ④两者都做。
+  // 重试信号：PGRST204（缺 image 列）/ 23514（posts_category_check 不含正常中文）。
   const attempts = [
     cleanUpdates,
     cleanUpdates.category ? { ...cleanUpdates, category: legacyCategory(cleanUpdates.category) } : cleanUpdates,
@@ -122,6 +135,11 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return fail(normalizePostError(error), 500, error)
   }
 
+  const newImage = cleanUpdates.image
+  if (typeof newImage === 'string' && oldPost?.image && newImage !== oldPost.image) {
+    await deleteR2ObjectByUrl(oldPost.image)
+  }
+
   await clearCache('posts')
   return ok(data ? { ...data, image: 'image' in data ? data.image : '' } : data)
 }
@@ -131,11 +149,16 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
   const auth = await requireAdmin(supabase)
   if (auth.response) return auth.response
 
+  // 先取旧图，删除记录后清理 R2 孤儿对象
+  const { data: oldPost } = await supabase.from('posts').select('image').eq('id', params.id).maybeSingle()
+
   const { error } = await supabase.from('posts').delete().eq('id', params.id)
 
   if (error) {
     return fail(normalizeSupabaseError(error), 500, error)
   }
+
+  await deleteR2ObjectByUrl(oldPost?.image)
 
   await clearCache('posts')
   return ok({ success: true })

@@ -14,6 +14,14 @@ function normalizePostError(error: { message?: string; code?: string }) {
   return normalizeSupabaseError(error)
 }
 
+/**
+ * 历史 GBK 乱码分类映射（勿删）。
+ * '鍏憡/娲诲姩/鍒嗕韩/閫氱煡' 是早期 UTF-8 中文被按 GBK 误解码后写入 DB 的乱码值；
+ * posts_category_check 约束故意同时兼容正常中文与乱码取值
+ * （见 supabase/manual_sql/20260618_post_images.sql），本函数把正常中文映射成
+ * 库里已有的乱码值以通过旧形态约束。若未来做数据清理/收紧约束，
+ * 需同步删除本映射与下方的降级重试分支。
+ */
 function legacyCategory(category: unknown) {
   const value = readString(category) || '公告'
   const map: Record<string, string> = {
@@ -110,6 +118,8 @@ export async function POST(request: Request) {
     published_at: status === 'published' ? new Date().toISOString() : null,
   }
 
+  // 降级重试链（兼容历史库形态）：①原样 ②分类改乱码 ③去掉 image 列 ④两者都做。
+  // 重试信号：PGRST204（缺 image 列）/ 23514（posts_category_check 不含正常中文）。
   const attempts = [
     baseInsert,
     { ...baseInsert, category: legacyCategory(baseInsert.category) },
