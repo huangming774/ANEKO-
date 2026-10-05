@@ -28,7 +28,7 @@ export async function GET() {
     updated_at: row.updated_at,
   }))
 
-  return ok(activities)
+  return ok(activities, { headers: { 'Cache-Control': 'no-store' } })
 }
 
 export async function POST(request: Request) {

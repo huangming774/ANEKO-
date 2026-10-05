@@ -116,7 +116,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     return fail(normalizeSupabaseError(error), 500, error)
   }
 
-  return ok(data || [])
+  return ok(data || [], { headers: { 'Cache-Control': 'no-store' } })
 }
 
 function isValidLatitude(value: unknown): value is number {
