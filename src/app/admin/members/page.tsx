@@ -9,6 +9,7 @@ export default function MembersPage() {
   const [members, setMembers] = useState<Profile[]>([]);
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
+  const [selfId, setSelfId] = useState('');
 
   const load = () => {
     apiRequest<Profile[]>('/api/members')
@@ -16,7 +17,12 @@ export default function MembersPage() {
       .catch((err) => setError(err instanceof Error ? err.message : '加载失败'));
   };
 
-  useEffect(load, []);
+  useEffect(() => {
+    load();
+    apiRequest<{ user: { id: string } }>('/api/auth/me')
+      .then((data) => setSelfId(data.user.id))
+      .catch(() => {});
+  }, []);
 
   const filtered = useMemo(() => {
     return members.filter((member) => {
@@ -76,32 +82,41 @@ export default function MembersPage() {
           </div>
         ) : (
           <div className="divide-y divide-[#2a2a4a]">
-            {filtered.map((member) => (
-              <div key={member.id} className="grid grid-cols-1 md:grid-cols-[56px_1fr_1.4fr_160px_160px] gap-3 md:gap-4 px-6 py-4 items-center">
-                <span className="text-2xl hidden md:block">{member.avatar || '🐱'}</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl md:hidden">{member.avatar || '🐱'}</span>
-                  <span className="text-white font-medium text-sm">{member.display_name || '未命名成员'}</span>
+            {filtered.map((member) => {
+              const isSelf = member.id === selfId;
+              const isAdmin = member.role === 'admin';
+              return (
+                <div key={member.id} className="grid grid-cols-1 md:grid-cols-[56px_1fr_1.4fr_160px_160px] gap-3 md:gap-4 px-6 py-4 items-center">
+                  <span className="text-2xl hidden md:block">{member.avatar || '🐱'}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl md:hidden">{member.avatar || '🐱'}</span>
+                    <span className="text-white font-medium text-sm">{member.display_name || '未命名成员'}</span>
+                    {isSelf && <span className="rounded-full bg-anime-pink/20 px-2 py-0.5 text-xs text-anime-pink">你</span>}
+                  </div>
+                  <span className="text-gray-400 text-sm truncate">{member.email}</span>
+                  <select
+                    value={member.role}
+                    disabled={isSelf}
+                    title={isSelf ? '不能修改自己的角色' : undefined}
+                    onChange={(event) => updateMember(member.id, { role: event.target.value as Profile['role'] })}
+                    className="bg-[#0f0f1a] border border-[#2a2a4a] rounded-xl px-3 py-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="member">成员</option>
+                    <option value="admin">管理员</option>
+                  </select>
+                  <select
+                    value={member.status}
+                    disabled={isSelf}
+                    title={isSelf ? '不能禁用自己' : isAdmin ? '请先将管理员降级为成员再禁用' : undefined}
+                    onChange={(event) => updateMember(member.id, { status: event.target.value as Profile['status'] })}
+                    className="bg-[#0f0f1a] border border-[#2a2a4a] rounded-xl px-3 py-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="active">活跃</option>
+                    <option value="inactive" disabled={isAdmin}>禁用{isAdmin ? '（先降级）' : ''}</option>
+                  </select>
                 </div>
-                <span className="text-gray-400 text-sm truncate">{member.email}</span>
-                <select
-                  value={member.role}
-                  onChange={(event) => updateMember(member.id, { role: event.target.value as Profile['role'] })}
-                  className="bg-[#0f0f1a] border border-[#2a2a4a] rounded-xl px-3 py-2 text-sm text-white"
-                >
-                  <option value="member">成员</option>
-                  <option value="admin">管理员</option>
-                </select>
-                <select
-                  value={member.status}
-                  onChange={(event) => updateMember(member.id, { status: event.target.value as Profile['status'] })}
-                  className="bg-[#0f0f1a] border border-[#2a2a4a] rounded-xl px-3 py-2 text-sm text-white"
-                >
-                  <option value="active">活跃</option>
-                  <option value="inactive">禁用</option>
-                </select>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
