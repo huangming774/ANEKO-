@@ -18,7 +18,6 @@ const categories: Array<{ id: 'all' | WorkCategory; name: string; icon: string }
 export default function GalleryPage() {
   const [works, setWorks] = useState<Work[]>([]);
   const [activeCategory, setActiveCategory] = useState<'all' | WorkCategory>('all');
-  const [showUpload, setShowUpload] = useState(false);
   const [selectedWork, setSelectedWork] = useState<Work | null>(null);
   const [error, setError] = useState('');
 
@@ -109,7 +108,6 @@ export default function GalleryPage() {
         )}
       </div>
 
-      {showUpload && <UploadModal onClose={() => setShowUpload(false)} onDone={() => { setShowUpload(false); load(); }} />}
       {selectedWork && (
         <WorkDetailModal
           work={selectedWork}
@@ -178,53 +176,6 @@ function WorkDetailModal({ work, onClose, onLike }: { work: Work; onClose: () =>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function UploadModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
-  const [error, setError] = useState('');
-
-  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError('');
-    const formData = new FormData(event.currentTarget);
-    try {
-      await apiRequest('/api/works', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: formData.get('title'),
-          image: formData.get('image'),
-          category: formData.get('category'),
-          description: formData.get('description'),
-          story: formData.get('story'),
-        }),
-      });
-      onDone();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '上传失败');
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <form onSubmit={submit} className="w-full max-w-lg bg-white rounded-3xl p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-800">上传作品</h2>
-          <button type="button" onClick={onClose}><X size={20} /></button>
-        </div>
-        <input name="title" required placeholder="作品标题" className="w-full rounded-xl border border-gray-200 px-4 py-3" />
-        <input name="image" placeholder="图片 URL" className="w-full rounded-xl border border-gray-200 px-4 py-3" />
-        <select name="category" className="w-full rounded-xl border border-gray-200 px-4 py-3 bg-white">
-          {categories.filter((item) => item.id !== 'all').map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-        </select>
-        <textarea name="description" placeholder="作品描述" rows={3} className="w-full rounded-xl border border-gray-200 px-4 py-3 resize-none" />
-        <textarea name="story" placeholder="创作故事" rows={3} className="w-full rounded-xl border border-gray-200 px-4 py-3 resize-none" />
-        {error && <div className="text-sm text-red-600">{error}</div>}
-        <button className="w-full py-3 rounded-xl bg-gradient-to-r from-anime-pink to-anime-purple text-white font-medium">
-          提交审核
-        </button>
-      </form>
     </div>
   );
 }

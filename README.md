@@ -11,8 +11,6 @@ ANEKO 动漫社官方网站与社团管理系统。包含面向公众的社团�
 | 数据库 / 认证 | [Supabase](https://supabase.com/)（PostgreSQL + Auth + RLS） |
 | 对象存储 | Cloudflare R2（图片上传，基于 `@aws-sdk/client-s3`） |
 | 缓存 | Upstash Redis（可选） |
-| 图表 | ECharts（`echarts-for-react`） |
-| 日历 | react-big-calendar |
 
 ## 功能一览
 
@@ -20,7 +18,7 @@ ANEKO 动漫社官方网站与社团管理系统。包含面向公众的社团�
 
 - **首页**：轮播横幅、社团简介、快捷入口、最新动态、精选作品
 - **社团介绍** `/about`
-- **活动日历** `/events`：活动列表与日历视图、在线报名
+- **活动日历** `/events`：活动列表与在线报名
 - **作品展示** `/gallery`：插画 / 摄影 / Cosplay / 视频 / 手工作品，支持点赞
 - **视频** `/videos`：上传的社团视频与哔哩哔哩视频，弹窗播放
 - **作品投稿** `/upload`：登录用户可上传作品（图片存入 Cloudflare R2）
@@ -64,7 +62,7 @@ ANEKO 动漫社官方网站与社团管理系统。包含面向公众的社团�
 ### 1. 环境要求
 
 - Node.js 18+（推荐 20+）
-- npm 或 bun
+- npm（以 `package-lock.json` 为准）
 - 一个 Supabase 项目
 - 一个 Cloudflare R2 存储桶（用于图片上传）
 
