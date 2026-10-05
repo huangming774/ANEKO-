@@ -10,6 +10,7 @@ const MAX_QUESTION_LENGTH = 2000
 export default function AiChatPage() {
   const [models, setModels] = useState<AiModelPublic[]>([])
   const [loaded, setLoaded] = useState(false)
+  const [loadError, setLoadError] = useState('')
   const [selectedModelId, setSelectedModelId] = useState('')
   const [question, setQuestion] = useState('')
   const [chatLog, setChatLog] = useState<AiChatMessage[]>([])
@@ -26,7 +27,11 @@ export default function AiChatPage() {
           setSelectedModelId(list[0].id)
         }
       })
-      .catch(() => setModels([]))
+      .catch((err) => {
+        setModels([])
+        // 区分「接口故障」与「管理员未配置」，避免误以为功能没生效
+        setLoadError(err instanceof Error ? err.message : '模型列表加载失败')
+      })
       .finally(() => setLoaded(true))
   }, [])
 
@@ -123,6 +128,12 @@ export default function AiChatPage() {
       <div className="mx-auto max-w-4xl px-4 py-8">
         {!loaded ? (
           <div className="rounded-3xl bg-white p-12 text-center text-gray-500 shadow-lg">加载中...</div>
+        ) : loadError ? (
+          <div className="rounded-3xl bg-white p-12 text-center shadow-lg">
+            <div className="mb-4 text-6xl">⚠️</div>
+            <h2 className="mb-2 text-2xl font-bold text-gray-800">模型列表加载失败</h2>
+            <p className="text-red-500">{loadError}</p>
+          </div>
         ) : models.length === 0 ? (
           <div className="rounded-3xl bg-white p-12 text-center shadow-lg">
             <div className="mb-4 text-6xl">🤖</div>
