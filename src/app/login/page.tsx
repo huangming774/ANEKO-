@@ -4,6 +4,7 @@ import { Suspense, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowRight, Eye, EyeOff, Lock, Mail } from 'lucide-react'
 import { apiRequest } from '@/lib/client-api'
+import { sanitizeNextPath } from '@/lib/safe-path'
 
 export default function LoginPage() {
   return (
@@ -22,7 +23,8 @@ function LoginPageContent() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
 
-  const nextPath = useMemo(() => searchParams?.get('next') || '/admin', [searchParams])
+  // next 参数净化：仅允许站内路径，防开放重定向
+  const nextPath = useMemo(() => sanitizeNextPath(searchParams?.get('next'), '/admin'), [searchParams])
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()

@@ -1,7 +1,12 @@
 import { createClient } from '@/lib/supabase-server'
 import { ensureProfile, fail, normalizeSupabaseError, ok, readString } from '@/lib/api-utils'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
+  // 先限流再查开关，避免用开关查询放大压力
+  const limited = await enforceRateLimit(request, { namespace: 'register', limit: 3, windowSeconds: 900 })
+  if (limited) return limited
+
   const supabase = await createClient()
   const { data: settings, error: settingsError } = await supabase
     .from('site_settings')

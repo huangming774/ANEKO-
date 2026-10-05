@@ -1,7 +1,16 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString } from '@/lib/api-utils'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
+  // key 含活动 id，防止单个活动被集中刷
+  const limited = await enforceRateLimit(request, {
+    namespace: `event-reg:${params.id}`,
+    limit: 5,
+    windowSeconds: 300,
+  })
+  if (limited) return limited
+
   const supabase = await createClient()
   const body = await request.json().catch(() => ({}))
   const name = readString(body.name)

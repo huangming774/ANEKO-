@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, readStringArray, requireAdmin } from '@/lib/api-utils'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 export async function GET() {
   const supabase = await createClient()
@@ -19,6 +20,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const limited = await enforceRateLimit(request, { namespace: 'join-app', limit: 5, windowSeconds: 300 })
+  if (limited) return limited
+
   const supabase = await createClient()
   const body = await request.json().catch(() => ({}))
   const name = readString(body.name)
