@@ -99,6 +99,21 @@ export async function POST(request: Request) {
     return fail('AI 问答暂未开放', 503)
   }
 
+  // 全局预置提示词（所有模型共用口径）；表未创建/为空则不注入，行为与之前一致
+  const { data: settings } = await admin
+    .from('ai_settings')
+    .select('system_prompt')
+    .eq('id', true)
+    .maybeSingle()
+
+  const systemPrompt = settings?.system_prompt?.trim()
+  const messages = systemPrompt
+    ? [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: question },
+      ]
+    : [{ role: 'user', content: question }]
+
   const endpoint = `${model.api_base_url.replace(/\/+$/, '')}/chat/completions`
 
   // 两阶段超时：AbortSignal.timeout 会连流一起掐断，所以用 AbortController 手动控制
@@ -132,7 +147,7 @@ export async function POST(request: Request) {
         },
         body: JSON.stringify({
           model: model.model_id,
-          messages: [{ role: 'user', content: question }],
+          messages,
           stream: true,
         }),
         signal: controller.signal,

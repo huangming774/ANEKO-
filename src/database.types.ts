@@ -53,6 +53,27 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_settings: {
+        Row: {
+          created_at: string
+          id: boolean
+          system_prompt: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: boolean
+          system_prompt?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: boolean
+          system_prompt?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       event_registrations: {
         Row: {
           created_at: string

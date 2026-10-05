@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bot, Loader2, Pencil, Plus, Save, Trash2 } from 'lucide-react'
+import { Bot, Loader2, Pencil, Plus, Save, Sparkles, Trash2 } from 'lucide-react'
 import { apiRequest } from '@/lib/client-api'
-import type { AiModel } from '@/lib/app-types'
+import type { AiModel, AiSettings } from '@/lib/app-types'
 
 type AiModelForm = {
   name: string
@@ -33,6 +33,10 @@ export default function AdminAiPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [systemPrompt, setSystemPrompt] = useState('')
+  const [promptLoaded, setPromptLoaded] = useState(false)
+  const [promptSaving, setPromptSaving] = useState(false)
+  const [promptMessage, setPromptMessage] = useState('')
 
   const loadModels = async () => {
     setLoading(true)
@@ -46,9 +50,38 @@ export default function AdminAiPage() {
     }
   }
 
+  const loadPrompt = async () => {
+    try {
+      const data = await apiRequest<AiSettings>('/api/ai/settings')
+      setSystemPrompt(data.system_prompt)
+    } catch (err) {
+      setPromptMessage(err instanceof Error ? err.message : '提示词加载失败')
+    } finally {
+      setPromptLoaded(true)
+    }
+  }
+
   useEffect(() => {
     loadModels()
+    loadPrompt()
   }, [])
+
+  const savePrompt = async () => {
+    setPromptMessage('')
+    setPromptSaving(true)
+    try {
+      const data = await apiRequest<AiSettings>('/api/ai/settings', {
+        method: 'PATCH',
+        body: JSON.stringify({ system_prompt: systemPrompt }),
+      })
+      setSystemPrompt(data.system_prompt)
+      setPromptMessage('提示词已保存')
+    } catch (err) {
+      setPromptMessage(err instanceof Error ? err.message : '保存失败')
+    } finally {
+      setPromptSaving(false)
+    }
+  }
 
   const update = <K extends keyof AiModelForm>(key: K, value: AiModelForm[K]) => {
     setForm((current) => ({ ...current, [key]: value }))
@@ -160,6 +193,35 @@ export default function AdminAiPage() {
       </div>
 
       {message && <div className="rounded-xl border border-[#2a2a4a] bg-[#1a1a2e] px-4 py-3 text-gray-200">{message}</div>}
+
+      <section className="rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-6">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-base font-semibold text-white">
+              <Sparkles size={16} className="text-anime-pink" />
+              全局提示词
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">所有模型共用的预置口径（以 system 身份随每次提问发送）。写明固定问答与回答规则，模型就不会乱答。留空则不注入。</p>
+          </div>
+          <button
+            type="button"
+            onClick={savePrompt}
+            disabled={promptSaving || !promptLoaded}
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-anime-pink to-anime-purple px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {promptSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+            保存提示词
+          </button>
+        </div>
+        <Textarea
+          label="系统提示词"
+          value={systemPrompt}
+          rows={12}
+          placeholder={'例如：\n你是「ANEKO 动漫社」的答疑助手，只回答与社团和本站使用相关的问题。\n【固定问答】问：介绍一下 ANEKO 动漫社\n答：ANEKO 动漫社是一个由动漫爱好者组成的校园社团……\n【规则】与社团无关的问题礼貌拒答；不确定的信息回复「请联系管理员确认」。'}
+          onChange={setSystemPrompt}
+        />
+        {promptMessage && <p className="mt-2 text-sm text-gray-400">{promptMessage}</p>}
+      </section>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[420px_1fr]">
         <section className="space-y-5 rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-6">
@@ -285,16 +347,28 @@ function Input({
   )
 }
 
-function Textarea({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string }) {
+function Textarea({
+  label,
+  value,
+  onChange,
+  placeholder,
+  rows = 3,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  rows?: number
+}) {
   return (
     <label className="block">
       <span className="mb-2 block text-sm text-gray-400">{label}</span>
       <textarea
         value={value}
         placeholder={placeholder}
-        rows={3}
+        rows={rows}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full resize-none rounded-xl border border-[#2a2a4a] bg-[#0f0f1a] px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-anime-pink focus:outline-none"
+        className="w-full resize-y rounded-xl border border-[#2a2a4a] bg-[#0f0f1a] px-4 py-3 text-sm text-white placeholder-gray-600 focus:border-anime-pink focus:outline-none"
       />
     </label>
   )

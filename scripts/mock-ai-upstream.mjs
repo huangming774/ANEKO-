@@ -21,7 +21,8 @@ const server = createServer((req, res) => {
     let question = ''
     try {
       const body = JSON.parse(raw)
-      question = body?.messages?.[0]?.content || ''
+      // messages[0] 可能是 system 预置提示词，取 user 消息
+      question = body?.messages?.find((m) => m.role === 'user')?.content || ''
     } catch {
       // ignore
     }

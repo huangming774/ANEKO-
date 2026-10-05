@@ -34,7 +34,7 @@ ANEKO 动漫社官方网站与社团管理系统。包含面向公众的社团�
 - **活动管理**：活动创建与编辑、报名名单管理
 - **作品审核**：投稿的审核（通过 / 拒绝）
 - **视频管理**：上传视频到 R2（预签名直传，最大 500MB）或添加哔哩哔哩视频链接
-- **AI 模型**：配置多个兼容 OpenAI API 格式的模型（API Base / Key / 模型 ID），API Key 仅存服务端、不回显
+- **AI 模型**：配置多个兼容 OpenAI API 格式的模型（API Base / Key / 模型 ID），API Key 仅存服务端、不回显；全局提示词统一约束所有模型的回答口径（固定问答、拒答规则）
 - **申请处理**：入社申请、活动报名的审批
 - **轮播管理**：首页 Hero 轮播图配置
 - **站点设置**：社团名称、Logo、联系方式、公告横幅、注册开关等
@@ -94,7 +94,7 @@ ANEKO 动漫社官方网站与社团管理系统。包含面向公众的社团�
 1. `supabase/migrations/20260618133000_init_aneko_schema.sql` —— 建表、触发器、RLS 策略
 2. `supabase/manual_sql/` 目录下的补充 SQL（按文件名日期顺序执行）
 
-主要数据表：`profiles`、`posts`、`events`、`event_registrations`、`event_applications`、`works`、`work_likes`、`join_applications`、`hero_slides`、`videos`、`site_settings`。
+主要数据表：`profiles`、`posts`、`events`、`event_registrations`、`event_applications`、`works`、`work_likes`、`join_applications`、`hero_slides`、`videos`、`site_settings`、`ai_models`、`ai_settings`。
 
 新用户注册后由数据库触发器 `handle_new_user` 自动创建 `profiles` 记录。
 

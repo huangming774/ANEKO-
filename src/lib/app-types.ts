@@ -168,6 +168,11 @@ export type AiModel = {
 // 公开的模型列表投影（不含 api_base_url / api_key）
 export type AiModelPublic = Pick<AiModel, 'id' | 'name' | 'description' | 'model_id' | 'sort_order'>
 
+// AI 全局设置：预置系统提示词（所有模型共用同一套回答口径）
+export type AiSettings = {
+  system_prompt: string
+}
+
 export type AiChatMessage = {
   question: string
   answer: string
