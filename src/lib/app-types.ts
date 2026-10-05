@@ -150,3 +150,27 @@ export type Video = {
   created_at: string
   updated_at: string
 }
+
+// AI 问答模型（API 响应不含 api_key 明文，只有 has_api_key 标志）
+export type AiModel = {
+  id: string
+  name: string
+  description: string
+  api_base_url: string
+  model_id: string
+  sort_order: number
+  is_active: boolean
+  has_api_key: boolean
+  created_at: string
+  updated_at: string
+}
+
+// 公开的模型列表投影（不含 api_base_url / api_key）
+export type AiModelPublic = Pick<AiModel, 'id' | 'name' | 'description' | 'model_id' | 'sort_order'>
+
+export type AiChatMessage = {
+  question: string
+  answer: string
+  modelName: string
+  error?: string
+}

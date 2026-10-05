@@ -12,6 +12,7 @@ const navItems = [
   { name: '活动日历', href: '/events' },
   { name: '作品展示', href: '/gallery' },
   { name: '视频', href: '/videos' },
+  { name: 'AI问答', href: '/ai' },
   { name: '上传作品', href: '/upload' },
   { name: '加入我们', href: '/join' },
   { name: 'Galgame游戏', href: 'https://js.miku.coffee/' },

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
+  Bot,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -28,6 +29,7 @@ const sidebarMenu = [
   { id: 'slides', label: '首页轮播', icon: <ImagePlus size={20} />, href: '/admin/slides' },
   { id: 'works', label: '作品审核', icon: <Image size={20} />, href: '/admin/works' },
   { id: 'videos', label: '视频管理', icon: <Video size={20} />, href: '/admin/videos' },
+  { id: 'ai', label: 'AI模型', icon: <Bot size={20} />, href: '/admin/ai' },
   { id: 'events', label: '活动管理', icon: <Calendar size={20} />, href: '/admin/events' },
   { id: 'posts', label: '公告管理', icon: <Megaphone size={20} />, href: '/admin/posts' },
   { id: 'settings', label: '系统设置', icon: <Settings size={20} />, href: '/admin/settings' },

@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_models: {
+        Row: {
+          api_base_url: string
+          api_key: string
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          model_id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          api_base_url: string
+          api_key: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          model_id: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          api_base_url?: string
+          api_key?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          model_id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       event_registrations: {
         Row: {
           created_at: string
