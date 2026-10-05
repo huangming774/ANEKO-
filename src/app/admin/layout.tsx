@@ -14,6 +14,7 @@ import {
   ImagePlus,
   LayoutDashboard,
   LogOut,
+  MapPin,
   Megaphone,
   Settings,
   UserPlus,
@@ -31,6 +32,7 @@ const sidebarMenu = [
   { id: 'videos', label: '视频管理', icon: <Video size={20} />, href: '/admin/videos' },
   { id: 'ai', label: 'AI模型', icon: <Bot size={20} />, href: '/admin/ai' },
   { id: 'events', label: '活动管理', icon: <Calendar size={20} />, href: '/admin/events' },
+  { id: 'checkins', label: '签到活动', icon: <MapPin size={20} />, href: '/admin/checkins' },
   { id: 'posts', label: '公告管理', icon: <Megaphone size={20} />, href: '/admin/posts' },
   { id: 'settings', label: '系统设置', icon: <Settings size={20} />, href: '/admin/settings' },
 ]

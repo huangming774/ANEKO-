@@ -173,6 +173,48 @@ export type AiSettings = {
   system_prompt: string
 }
 
+// 签到活动（限时定位打卡）
+export type CheckinActivity = {
+  id: string
+  title: string
+  note: string
+  starts_at: string
+  ends_at: string
+  is_active: boolean
+  checkin_count: number
+  created_at: string
+  updated_at: string
+}
+
+// 前台可见的当前活动投影（不含管理字段）
+export type CheckinActivityPublic = {
+  id: string
+  title: string
+  note: string
+  starts_at: string
+  ends_at: string
+  checked_in_count: number
+  server_time: string
+}
+
+// 签到记录（管理端视图）
+export type CheckinRecord = {
+  id: string
+  cn: string
+  latitude: number
+  longitude: number
+  accuracy: number | null
+  created_at: string
+}
+
+// 签到提交载荷（匿名）
+export type CheckinSubmitPayload = {
+  cn: string
+  latitude: number
+  longitude: number
+  accuracy?: number | null
+}
+
 export type AiChatMessage = {
   question: string
   answer: string

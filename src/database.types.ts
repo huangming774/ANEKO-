@@ -74,6 +74,88 @@ export type Database = {
         }
         Relationships: []
       }
+      checkin_activities: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          ends_at: string
+          id: string
+          is_active: boolean
+          note: string
+          starts_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          ends_at: string
+          id?: string
+          is_active?: boolean
+          note?: string
+          starts_at: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          note?: string
+          starts_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkin_activities_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      checkins: {
+        Row: {
+          accuracy: number | null
+          activity_id: string
+          cn: string
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+        }
+        Insert: {
+          accuracy?: number | null
+          activity_id: string
+          cn: string
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+        }
+        Update: {
+          accuracy?: number | null
+          activity_id?: string
+          cn?: string
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkins_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "checkin_activities"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       event_registrations: {
         Row: {
           created_at: string
