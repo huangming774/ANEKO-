@@ -1,20 +1,25 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, requireAdmin } from '@/lib/api-utils'
-import { cachedJSON, clearCache } from '@/lib/cache'
+import { cachedJSON, clearCache, SETTINGS_TTL_SECONDS } from '@/lib/cache'
 import { deleteR2ObjectByUrl } from '@/lib/r2'
 
 export async function GET() {
   const supabase = await createClient()
 
-  return cachedJSON(supabase, 'cache:settings:row', async () => {
-    const { data, error } = await supabase.from('site_settings').select('*').eq('id', true).maybeSingle()
+  return cachedJSON(
+    supabase,
+    'cache:settings:row',
+    async () => {
+      const { data, error } = await supabase.from('site_settings').select('*').eq('id', true).maybeSingle()
 
-    if (error) {
-      return fail(normalizeSupabaseError(error), 500, error)
-    }
+      if (error) {
+        return fail(normalizeSupabaseError(error), 500, error)
+      }
 
-    return ok(data)
-  })
+      return ok(data)
+    },
+    SETTINGS_TTL_SECONDS,
+  )
 }
 
 export async function PATCH(request: Request) {

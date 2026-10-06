@@ -6,7 +6,10 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/database.types'
 import { hasRedisConfig, redisExpire, redisIncr, redisMGetJSON, redisSetJSON } from '@/lib/redis'
 
-export const CACHE_TTL_SECONDS = 60
+// TTL 只是兜底（正常失效由 clearCache 自增版本号即时完成）：长度 ≈ 绕过 API 改库 / 失效失败时的最长陈旧时间
+export const CACHE_TTL_SECONDS = 300
+// 站点设置几乎不变，单独放宽；后台保存仍即时失效，只影响手工改库的可见延迟
+export const SETTINGS_TTL_SECONDS = 600
 
 // 版本键只是个计数器，给个长 TTL 防止无期限残留；即使过期从 0 重来也安全（旧条目版本失配只会 MISS，不会脏读）
 const VERSION_KEY_TTL_SECONDS = 30 * 24 * 3600
@@ -62,6 +65,7 @@ export async function cachedJSON(
   supabase: SupabaseClient<Database>,
   key: string,
   load: () => Promise<Response>,
+  ttlSeconds: number = CACHE_TTL_SECONDS,
 ): Promise<Response> {
   if (!(await isRedisEnabled(supabase))) {
     return tag(await load(), 'BYPASS')
@@ -89,7 +93,7 @@ export async function cachedJSON(
       // clone：本体还要返回给客户端。版本用读取时刻的快照——
       // 若 load 期间发生 clearCache，条目一写入即失配（宁可 MISS，不缓存脏数据）
       const body = await res.clone().json()
-      await redisSetJSON(key, { v: version, body } as CacheEnvelope, CACHE_TTL_SECONDS)
+      await redisSetJSON(key, { v: version, body } as CacheEnvelope, ttlSeconds)
     } catch {
       // 写缓存失败不影响响应
     }
