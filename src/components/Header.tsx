@@ -11,6 +11,7 @@ const navItems = [
   { name: '关于我们', href: '/about' },
   { name: '活动日历', href: '/events' },
   { name: '活动签到', href: '/checkin' },
+  { name: '猫鼠游戏', href: '/catmouse' },
   { name: '作品展示', href: '/gallery' },
   { name: '视频', href: '/videos' },
   { name: 'AI问答', href: '/ai' },

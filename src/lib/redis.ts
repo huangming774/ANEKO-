@@ -71,6 +71,14 @@ export async function redisHGetAll(key: string): Promise<Record<string, string> 
   return redis.hgetall(key);
 }
 
+export async function redisHDel(key: string, ...fields: string[]) {
+  if (fields.length === 0) {
+    return 0;
+  }
+
+  return redis.hdel(key, ...fields);
+}
+
 // --- List 操作 ---
 export async function redisLPush(key: string, ...values: string[]) {
   return redis.lpush(key, ...values);
