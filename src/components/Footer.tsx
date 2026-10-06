@@ -73,7 +73,7 @@ export default function Footer({ socialLinks }: FooterProps) {
 
         <div className="mt-12 border-t border-gray-800 pt-8 text-center">
           <p className="text-sm text-gray-500">© 2026 {clubName} 版权所有</p>
-          <p className="mt-2 text-xs text-gray-600">Built with Next.js, Supabase and Cloudflare R2</p>
+          <p className="mt-2 text-xs text-gray-600">Built with Next.js, PostgreSQL, Redis and Cloudflare R2</p>
         </div>
       </div>
     </footer>
