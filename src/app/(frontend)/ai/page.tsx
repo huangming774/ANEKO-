@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Bot, Eraser, Send, Square } from 'lucide-react'
 import { apiRequest } from '@/lib/client-api'
-import type { AiChatMessage, AiModelPublic } from '@/lib/app-types'
+import type { AiChatMessage, AiModelPublic, AiThinkingLevel } from '@/lib/app-types'
 
 const MAX_QUESTION_LENGTH = 2000
 
@@ -15,8 +15,14 @@ export default function AiChatPage() {
   const [question, setQuestion] = useState('')
   const [chatLog, setChatLog] = useState<AiChatMessage[]>([])
   const [streaming, setStreaming] = useState(false)
+  const [searchOn, setSearchOn] = useState(false)
+  const [thinkingLevel, setThinkingLevel] = useState<AiThinkingLevel>('off')
   const abortRef = useRef<AbortController | null>(null)
   const logEndRef = useRef<HTMLDivElement | null>(null)
+
+  const selectedModel = models.find((item) => item.id === selectedModelId)
+  const supportsSearch = selectedModel?.search_params != null
+  const supportsThinking = selectedModel?.reasoning_style != null
 
   useEffect(() => {
     apiRequest<AiModelPublic[]>('/api/ai/models')
@@ -48,6 +54,15 @@ export default function AiChatPage() {
     })
   }
 
+  const updateLastThinking = (append: string) => {
+    setChatLog((log) => {
+      const next = [...log]
+      const last = next[next.length - 1]
+      next[next.length - 1] = { ...last, thinking: (last.thinking || '') + append }
+      return next
+    })
+  }
+
   const markLastError = (message: string) => {
     setChatLog((log) => {
       const next = [...log]
@@ -74,7 +89,13 @@ export default function AiChatPage() {
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model_id: selectedModelId, question: text }),
+        body: JSON.stringify({
+          model_id: selectedModelId,
+          question: text,
+          // 仅在所选模型支持时发送，后端也会按模型配置二次校验
+          search: supportsSearch && searchOn,
+          thinking_level: supportsThinking ? thinkingLevel : 'off',
+        }),
         signal: controller.signal,
       })
 
@@ -88,14 +109,30 @@ export default function AiChatPage() {
 
       if (!response.body) return
 
+      // NDJSON 事件流：每行 { type: 'thinking' | 'text', delta }
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
+      let buffer = ''
+      const consumeLine = (line: string) => {
+        const trimmed = line.trim()
+        if (!trimmed) return
+        try {
+          const event = JSON.parse(trimmed) as { type?: string; delta?: string }
+          if (event.type === 'thinking') updateLastThinking(event.delta || '')
+          else if (event.type === 'text') updateLastAnswer(event.delta || '')
+        } catch {
+          // 忽略无法解析的行
+        }
+      }
       for (;;) {
         const { done, value } = await reader.read()
         if (done) break
-        const chunk = decoder.decode(value, { stream: true })
-        if (chunk) updateLastAnswer(chunk)
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) consumeLine(line)
       }
+      consumeLine(buffer)
     } catch (err) {
       if (controller.signal.aborted) {
         // 用户主动停止：保留已生成部分
@@ -143,11 +180,15 @@ export default function AiChatPage() {
         ) : (
           <div className="overflow-hidden rounded-3xl bg-white shadow-lg">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-6 py-4">
-              <div className="flex items-center gap-2">
-                <Bot size={20} className="text-anime-pink" />
+              <div className="flex flex-wrap items-center gap-2">
+                <Bot size={20} className="shrink-0 text-anime-pink" />
                 <select
                   value={selectedModelId}
-                  onChange={(event) => setSelectedModelId(event.target.value)}
+                  onChange={(event) => {
+                    setSelectedModelId(event.target.value)
+                    setSearchOn(false)
+                    setThinkingLevel('off')
+                  }}
                   disabled={streaming}
                   className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-anime-pink focus:outline-none"
                 >
@@ -157,6 +198,31 @@ export default function AiChatPage() {
                     </option>
                   ))}
                 </select>
+                {supportsSearch && (
+                  <label className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={searchOn}
+                      onChange={(event) => setSearchOn(event.target.checked)}
+                      disabled={streaming}
+                      className="accent-anime-pink"
+                    />
+                    联网搜索
+                  </label>
+                )}
+                {supportsThinking && (
+                  <select
+                    value={thinkingLevel}
+                    onChange={(event) => setThinkingLevel(event.target.value as AiThinkingLevel)}
+                    disabled={streaming}
+                    className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-anime-pink focus:outline-none"
+                  >
+                    <option value="off">思考：关闭</option>
+                    <option value="low">思考：低</option>
+                    <option value="medium">思考：中</option>
+                    <option value="high">思考：高</option>
+                  </select>
+                )}
               </div>
               <button
                 type="button"
@@ -197,6 +263,15 @@ export default function AiChatPage() {
                     </div>
                     <div className="flex justify-start">
                       <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-gray-100 px-4 py-3 text-gray-800">
+                        {item.thinking ? (
+                          <details
+                            open={streaming && index === chatLog.length - 1}
+                            className="mb-2 rounded-xl bg-white/70 px-3 py-2 text-xs text-gray-500"
+                          >
+                            <summary className="cursor-pointer select-none font-medium text-gray-400">思考过程</summary>
+                            <div className="mt-2 whitespace-pre-wrap border-l-2 border-gray-200 pl-2">{item.thinking}</div>
+                          </details>
+                        ) : null}
                         {item.error ? (
                           <span className="text-red-500">{item.error}</span>
                         ) : (

@@ -1,30 +1,46 @@
 import { createAdminClient } from '@/lib/supabase-server'
 import { fail, readString } from '@/lib/api-utils'
+import { buildReasoningParams, normalizeReasoningStyle, normalizeSearchParams } from '@/lib/ai'
 import { enforceRateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
-// 流式长回答需要更长的执行窗口（Vercel serverless 默认会截断）
-export const maxDuration = 120
+// 流式长回答 + 思考型模型需要更长的执行窗口（Vercel serverless 默认会截断）
+export const maxDuration = 300
 
 const HEAD_TIMEOUT_MS = 30_000
 const TOTAL_TIMEOUT_MS = 120_000
+// 思考型模型首 token 前有较长推理期，单独放宽窗口
+const THINKING_HEAD_TIMEOUT_MS = 60_000
+const THINKING_TOTAL_TIMEOUT_MS = 300_000
 const MAX_QUESTION_LENGTH = 2000
 
-// 纯文本流（服务端已把上游 OpenAI SSE 归一化为 delta 纯文本）
+const THINKING_LEVELS = ['off', 'low', 'medium', 'high'] as const
+type ThinkingLevel = (typeof THINKING_LEVELS)[number]
+
+// NDJSON 事件流：每行一个 JSON，{ type: 'thinking' | 'text', delta }
+// 思考过程与正式回答分流，客户端可折叠展示；错误响应仍是 application/json
 const streamHeaders = {
-  'Content-Type': 'text/plain; charset=utf-8',
+  'Content-Type': 'application/x-ndjson; charset=utf-8',
   'Cache-Control': 'no-cache, no-transform',
   'X-Accel-Buffering': 'no', // 防 nginx 等代理缓冲整包
 }
 
 /**
- * 把上游 OpenAI 兼容 SSE（data: {choices[0].delta.content} / data: [DONE]）
- * 增量解析为纯文本。必须容忍 chunk 跨 read 边界（行缓冲）。
+ * 把上游 OpenAI 兼容 SSE 增量归一化为 NDJSON 事件行：
+ * - delta.content → { type: 'text', delta }
+ * - delta.reasoning_content / delta.reasoning（DeepSeek/Kimi/GLM/通义等思考流）→ { type: 'thinking', delta }
+ * 必须容忍 chunk 跨 read 边界（行缓冲）。
  */
-function sseToTextTransform(onDone?: () => void) {
+function sseToNdjsonTransform(onDone?: () => void) {
   const decoder = new TextDecoder()
   const encoder = new TextEncoder()
   let buffer = ''
+
+  const emit = (controller: TransformStreamDefaultController<Uint8Array>, type: string, delta: unknown) => {
+    if (typeof delta === 'string' && delta) {
+      controller.enqueue(encoder.encode(JSON.stringify({ type, delta }) + '\n'))
+    }
+  }
 
   const consumeLine = (line: string, controller: TransformStreamDefaultController<Uint8Array>) => {
     const trimmed = line.trim()
@@ -35,10 +51,10 @@ function sseToTextTransform(onDone?: () => void) {
 
     try {
       const json = JSON.parse(payload)
-      const delta = json?.choices?.[0]?.delta?.content
-      if (typeof delta === 'string' && delta) {
-        controller.enqueue(encoder.encode(delta))
-      }
+      const delta = json?.choices?.[0]?.delta
+      const thinking = typeof delta?.reasoning_content === 'string' ? delta.reasoning_content : delta?.reasoning
+      emit(controller, 'thinking', thinking)
+      emit(controller, 'text', delta?.content)
     } catch {
       // 忽略无法解析的事件行（如 provider 自定义事件）
     }
@@ -70,20 +86,24 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}))
   const modelId = readString(body.model_id)
   const question = readString(body.question)
+  const searchEnabled = body.search === true
+  const thinkingLevelRaw = readString(body.thinking_level) || 'off'
 
   if (!modelId) return fail('缺少模型参数')
   if (!question) return fail('请输入问题')
   if (question.length > MAX_QUESTION_LENGTH) return fail('问题过长（最多 2000 字符）')
+  if (!THINKING_LEVELS.includes(thinkingLevelRaw as ThinkingLevel)) return fail('思考强度参数不合法')
+  const thinkingLevel = thinkingLevelRaw as ThinkingLevel
 
   if (!process.env.SUPABASE_SECRET_KEY) {
     return fail('服务端 SUPABASE_SECRET_KEY 未配置', 500)
   }
 
-  // service role 读配置（ai_models 对匿名完全不可读）；不区分「不存在/已禁用」防探测
+  // service role 读配置（ai_models 对匿名完全不可读）；select('*') 仅在服务端使用，明文不出进程
   const admin = createAdminClient()
   const { data: model, error: modelError } = await admin
     .from('ai_models')
-    .select('api_base_url, api_key, model_id')
+    .select('*')
     .eq('id', modelId)
     .eq('is_active', true)
     .maybeSingle()
@@ -116,6 +136,20 @@ export async function POST(request: Request) {
 
   const endpoint = `${model.api_base_url.replace(/\/+$/, '')}/chat/completions`
 
+  // 能力参数透传：联网 = 合并模型的 search_params；思考 = 按 reasoning_style 映射档位
+  // 固定字段放后面，防止配置里的同名键覆盖 model/messages/stream
+  const reasoningStyle = normalizeReasoningStyle((model as { reasoning_style?: unknown }).reasoning_style)
+  const searchParams = searchEnabled ? normalizeSearchParams((model as { search_params?: unknown }).search_params) : null
+  const thinkingActive = reasoningStyle !== null && thinkingLevel !== 'off'
+  const extraBody = {
+    ...buildReasoningParams(reasoningStyle, thinkingLevel),
+    ...(searchParams && searchParams !== 'invalid' ? searchParams : {}),
+  }
+
+  // 思考型模型首 token 前推理期长，放宽两阶段超时
+  const headTimeoutMs = thinkingActive ? THINKING_HEAD_TIMEOUT_MS : HEAD_TIMEOUT_MS
+  const totalTimeoutMs = thinkingActive ? THINKING_TOTAL_TIMEOUT_MS : TOTAL_TIMEOUT_MS
+
   // 两阶段超时：AbortSignal.timeout 会连流一起掐断，所以用 AbortController 手动控制
   const controller = new AbortController()
   let headReceived = false
@@ -125,10 +159,10 @@ export async function POST(request: Request) {
   }
   const headTimer = setTimeout(() => {
     if (!headReceived) controller.abort(new Error('head-timeout'))
-  }, HEAD_TIMEOUT_MS)
+  }, headTimeoutMs)
   const totalTimer = setTimeout(() => {
     controller.abort(new Error('total-timeout'))
-  }, TOTAL_TIMEOUT_MS)
+  }, totalTimeoutMs)
 
   // 客户端断开（用户停止生成/关页面）时取消上游读取，不白烧 token
   request.signal.addEventListener('abort', () => {
@@ -146,6 +180,7 @@ export async function POST(request: Request) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          ...extraBody,
           model: model.model_id,
           messages,
           stream: true,
@@ -174,20 +209,30 @@ export async function POST(request: Request) {
 
     const contentType = upstream.headers.get('content-type') || ''
 
-    // 流式：归一化为纯文本转发
+    // 流式：归一化为 NDJSON 事件转发
     if (contentType.includes('text/event-stream') && upstream.body) {
-      return new Response(upstream.body.pipeThrough(sseToTextTransform(cleanup)), { headers: streamHeaders })
+      return new Response(upstream.body.pipeThrough(sseToNdjsonTransform(cleanup)), { headers: streamHeaders })
     }
 
-    // 非流式 JSON 兜底：整包提取后作为单 chunk 输出，客户端路径完全一致
+    // 非流式 JSON 兜底：整包拆成 thinking/text 事件输出，客户端路径完全一致
     const json = await upstream.json().catch(() => null)
     cleanup()
-    const content = json?.choices?.[0]?.message?.content
-    const text = typeof content === 'string' ? content : ''
+    const message = json?.choices?.[0]?.message
+    const thinking = typeof message?.reasoning_content === 'string' ? message.reasoning_content : message?.reasoning
+    const content = message?.content
     const encoder = new TextEncoder()
+    const events: string[] = []
+    if (typeof thinking === 'string' && thinking) {
+      events.push(JSON.stringify({ type: 'thinking', delta: thinking }) + '\n')
+    }
+    if (typeof content === 'string' && content) {
+      events.push(JSON.stringify({ type: 'text', delta: content }) + '\n')
+    }
     const stream = new ReadableStream<Uint8Array>({
       start(streamController) {
-        streamController.enqueue(encoder.encode(text))
+        for (const event of events) {
+          streamController.enqueue(encoder.encode(event))
+        }
         streamController.close()
       },
     })

@@ -13,6 +13,10 @@ type AiModelForm = {
   model_id: string
   sort_order: number
   is_active: boolean
+  // 联网搜索参数（JSON 文本，提交时解析；空 = 不支持）
+  search_params: string
+  // 思考参数风格（'' = 不支持）
+  reasoning_style: string
 }
 
 const emptyForm: AiModelForm = {
@@ -23,6 +27,8 @@ const emptyForm: AiModelForm = {
   model_id: '',
   sort_order: 0,
   is_active: true,
+  search_params: '',
+  reasoning_style: '',
 }
 
 export default function AdminAiPage() {
@@ -104,6 +110,8 @@ export default function AdminAiPage() {
       model_id: model.model_id,
       sort_order: model.sort_order,
       is_active: model.is_active,
+      search_params: model.search_params ? JSON.stringify(model.search_params) : '',
+      reasoning_style: model.reasoning_style || '',
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -127,19 +135,33 @@ export default function AdminAiPage() {
       return
     }
 
+    let searchParams: Record<string, unknown> | null = null
+    if (form.search_params.trim()) {
+      try {
+        const parsed = JSON.parse(form.search_params)
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw new Error('not object')
+        searchParams = parsed as Record<string, unknown>
+      } catch {
+        setMessage('联网搜索参数必须是 JSON 对象（如 {"web_search": true}）')
+        return
+      }
+    }
+
+    const payload = { ...form, search_params: searchParams, reasoning_style: form.reasoning_style || null }
+
     setSaving(true)
     try {
       if (editingId) {
         // api_key 留空 = 不更新密钥（服务端同样兜底）
         await apiRequest<AiModel>(`/api/ai/models/${editingId}`, {
           method: 'PATCH',
-          body: JSON.stringify(form),
+          body: JSON.stringify(payload),
         })
         setMessage('模型已更新')
       } else {
         await apiRequest<AiModel>('/api/ai/models', {
           method: 'POST',
-          body: JSON.stringify(form),
+          body: JSON.stringify(payload),
         })
         setMessage('模型已添加')
       }
@@ -242,6 +264,29 @@ export default function AdminAiPage() {
             onChange={(value) => update('api_key', value)}
           />
           <Input label="模型 ID" value={form.model_id} placeholder="如：gpt-4o / deepseek-chat" onChange={(value) => update('model_id', value)} />
+          <label className="block">
+            <span className="mb-2 block text-sm text-gray-400">思考参数风格（可选）</span>
+            <select
+              value={form.reasoning_style}
+              onChange={(event) => update('reasoning_style', event.target.value)}
+              className="w-full rounded-xl border border-[#2a2a4a] bg-[#0f0f1a] px-4 py-3 text-sm text-white focus:border-anime-pink focus:outline-none"
+            >
+              <option value="">不支持思考强度</option>
+              <option value="reasoning_effort">reasoning_effort — OpenAI / DeepSeek / 多数聚合</option>
+              <option value="thinking_budget">enable_thinking + thinking_budget — 通义 Qwen</option>
+              <option value="thinking_claude">thinking.budget_tokens — Claude 兼容代理</option>
+            </select>
+            <span className="mt-2 block text-xs text-gray-500">
+              选中后前台出现「思考强度」选择（关闭/低/中/高），按此风格翻译成上游参数：reasoning_effort 传 low/medium/high；thinking_budget 传 1024/4096/16384；Claude 传 2048/8192/24576。
+            </span>
+          </label>
+          <Textarea
+            label="联网搜索参数（可选）"
+            value={form.search_params}
+            rows={3}
+            placeholder={'用户在前台开启「联网」时合并进请求体；留空 = 不支持联网。例如：\n{"web_search": true}（智谱 GLM）\n{"enable_search": true}（通义）'}
+            onChange={(value) => update('search_params', value)}
+          />
           <Input
             label="排序（小的在前）"
             type="number"
@@ -290,6 +335,12 @@ export default function AdminAiPage() {
                       <span className={`rounded-full px-2 py-1 text-xs ${model.has_api_key ? 'bg-anime-blue/15 text-anime-blue' : 'bg-amber-500/15 text-amber-300'}`}>
                         {model.has_api_key ? '密钥已配置' : '密钥未配置'}
                       </span>
+                      {model.search_params && (
+                        <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-xs text-emerald-300">联网</span>
+                      )}
+                      {model.reasoning_style && (
+                        <span className="rounded-full bg-anime-purple/15 px-2 py-1 text-xs text-anime-purple">思考强度</span>
+                      )}
                       <span className="rounded-full bg-[#23233a] px-2 py-1 text-xs text-gray-400">排序 {model.sort_order}</span>
                     </div>
                     <p className="mt-2 line-clamp-2 break-words text-sm text-gray-400">

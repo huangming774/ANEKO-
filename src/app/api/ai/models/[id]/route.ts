@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, requireAdmin } from '@/lib/api-utils'
-import { normalizeBaseUrl, toSafeModel } from '@/lib/ai'
+import { normalizeBaseUrl, normalizeReasoningStyle, normalizeSearchParams, toSafeModel } from '@/lib/ai'
 import type { Database } from '@/database.types'
 
 type AiModelUpdate = Database['public']['Tables']['ai_models']['Update']
@@ -18,6 +18,17 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if (body.model_id !== undefined) updates.model_id = readString(body.model_id)
   if (body.sort_order !== undefined) updates.sort_order = Number(body.sort_order) || 0
   if (body.is_active !== undefined) updates.is_active = Boolean(body.is_active)
+
+  if (body.search_params !== undefined) {
+    const searchParams = normalizeSearchParams(body.search_params)
+    if (searchParams === 'invalid') return fail('联网搜索参数必须是 JSON 对象（如 {"web_search": true}）')
+    updates.search_params = searchParams
+  }
+  if (body.reasoning_style !== undefined) {
+    const reasoningStyle = normalizeReasoningStyle(body.reasoning_style)
+    if (body.reasoning_style && !reasoningStyle) return fail('思考参数风格不合法')
+    updates.reasoning_style = reasoningStyle
+  }
 
   if (body.api_base_url !== undefined) {
     const apiBaseUrl = normalizeBaseUrl(body.api_base_url)

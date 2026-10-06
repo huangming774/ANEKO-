@@ -1,6 +1,27 @@
 import { createClient, createAdminClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, requireAdmin } from '@/lib/api-utils'
-import { normalizeBaseUrl, toSafeModel } from '@/lib/ai'
+import { coerceSearchParams, normalizeBaseUrl, normalizeReasoningStyle, normalizeSearchParams, toSafeModel } from '@/lib/ai'
+
+// 公开列表投影（归一化能力字段，缺列/非法值一律按「不支持」）
+function toPublicModel(row: {
+  id: string
+  name: string
+  description: string
+  model_id: string
+  sort_order: number
+  search_params?: unknown
+  reasoning_style?: unknown
+}) {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    model_id: row.model_id,
+    sort_order: row.sort_order,
+    search_params: coerceSearchParams(row.search_params),
+    reasoning_style: normalizeReasoningStyle(row.reasoning_style),
+  }
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -30,12 +51,29 @@ export async function GET(request: Request) {
   }
 
   const admin = createAdminClient()
-  const { data, error } = await admin
+  // 前台需要知道模型支持哪些能力（联网/思考），故多投影两列；api_key/api_base_url 仍不离开 PostgREST
+  const primary = await admin
     .from('ai_models')
-    .select('id, name, description, model_id, sort_order')
+    .select('id, name, description, model_id, sort_order, search_params, reasoning_style')
     .eq('is_active', true)
     .order('sort_order')
     .order('created_at')
+
+  if (primary.error?.code === '42703') {
+    // 迁移未执行（缺 search_params/reasoning_style 列）：降级为旧投影，按「不支持」展示
+    const fallback = await admin
+      .from('ai_models')
+      .select('id, name, description, model_id, sort_order')
+      .eq('is_active', true)
+      .order('sort_order')
+      .order('created_at')
+    if (fallback.error) {
+      return fail(normalizeSupabaseError(fallback.error), 500, fallback.error)
+    }
+    return ok((fallback.data || []).map(toPublicModel))
+  }
+
+  const { data, error } = primary
 
   if (error) {
     // 表还没创建时返回空列表（与 hero-slides 等公开接口容错一致）
@@ -48,7 +86,7 @@ export async function GET(request: Request) {
     return fail(normalizeSupabaseError(error), 500, error)
   }
 
-  return ok(data || [])
+  return ok((data || []).map(toPublicModel))
 }
 
 export async function POST(request: Request) {
@@ -67,6 +105,11 @@ export async function POST(request: Request) {
   if (!apiKey) return fail('请填写 API Key')
   if (!modelId) return fail('请填写模型 ID')
 
+  const searchParams = normalizeSearchParams(body.search_params)
+  if (searchParams === 'invalid') return fail('联网搜索参数必须是 JSON 对象（如 {"web_search": true}）')
+  const reasoningStyle = normalizeReasoningStyle(body.reasoning_style)
+  if (body.reasoning_style && !reasoningStyle) return fail('思考参数风格不合法')
+
   const { data, error } = await supabase
     .from('ai_models')
     .insert({
@@ -77,6 +120,8 @@ export async function POST(request: Request) {
       model_id: modelId,
       sort_order: Number(body.sort_order) || 0,
       is_active: body.is_active === undefined ? true : Boolean(body.is_active),
+      search_params: searchParams,
+      reasoning_style: reasoningStyle,
     })
     .select()
     .single()

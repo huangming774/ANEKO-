@@ -151,6 +151,9 @@ export type Video = {
   updated_at: string
 }
 
+// 思考强度档位（前端选择；具体请求参数按模型的 reasoning_style 映射）
+export type AiThinkingLevel = 'off' | 'low' | 'medium' | 'high'
+
 // AI 问答模型（API 响应不含 api_key 明文，只有 has_api_key 标志）
 export type AiModel = {
   id: string
@@ -161,12 +164,19 @@ export type AiModel = {
   sort_order: number
   is_active: boolean
   has_api_key: boolean
+  // 用户开启「联网」时合并进请求体的参数；null = 不支持联网搜索
+  search_params: Record<string, unknown> | null
+  // 思考强度参数风格：'reasoning_effort' | 'thinking_budget' | 'thinking_claude'；null = 不支持
+  reasoning_style: string | null
   created_at: string
   updated_at: string
 }
 
-// 公开的模型列表投影（不含 api_base_url / api_key）
-export type AiModelPublic = Pick<AiModel, 'id' | 'name' | 'description' | 'model_id' | 'sort_order'>
+// 公开的模型列表投影（不含 api_base_url / api_key），带前台开关所需的两项能力配置
+export type AiModelPublic = Pick<
+  AiModel,
+  'id' | 'name' | 'description' | 'model_id' | 'sort_order' | 'search_params' | 'reasoning_style'
+>
 
 // AI 全局设置：预置系统提示词（所有模型共用同一套回答口径）
 export type AiSettings = {
@@ -220,4 +230,6 @@ export type AiChatMessage = {
   answer: string
   modelName: string
   error?: string
+  // 思考型模型的推理过程（上游 delta.reasoning_content），可折叠展示
+  thinking?: string
 }
