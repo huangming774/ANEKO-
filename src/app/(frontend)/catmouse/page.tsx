@@ -129,22 +129,37 @@ export default function CatMousePage() {
     }
     let stopped = false
     setLocateState((prev) => (prev === 'located' ? prev : 'locating'))
-    const watchId = navigator.geolocation.watchPosition(
+
+    const applyPosition = (position: GeolocationPosition) => {
+      if (stopped) return
+      const next: Coords = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        accuracy: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null,
+      }
+      coordsRef.current = next
+      setCoords(next)
+      setLocateState('located')
+      if (!flewToSelfRef.current) {
+        flewToSelfRef.current = true
+        setMapFocus({ lat: next.lat, lng: next.lng, zoom: 16, nonce: Date.now() })
+      }
+    }
+
+    // 先取一次快速粗略定位（网络/缓存，秒回）：地图立刻回到自己，避免长时间停在默认中心；
+    // GPS 精化由下方 watchPosition 持续覆盖。粗略值只在尚无定位时生效
+    navigator.geolocation.getCurrentPosition(
       (position) => {
-        if (stopped) return
-        const next: Coords = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          accuracy: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null,
-        }
-        coordsRef.current = next
-        setCoords(next)
-        setLocateState('located')
-        if (!flewToSelfRef.current) {
-          flewToSelfRef.current = true
-          setMapFocus({ lat: next.lat, lng: next.lng, zoom: 16, nonce: Date.now() })
-        }
+        if (!coordsRef.current) applyPosition(position)
       },
+      () => {
+        // 快速定位失败不改状态，交给 watchPosition 报告
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 },
+    )
+
+    const watchId = navigator.geolocation.watchPosition(
+      applyPosition,
       (error) => {
         if (stopped) return
         if (error.code === error.PERMISSION_DENIED) setLocateState('denied')
@@ -501,7 +516,7 @@ export default function CatMousePage() {
 
   // 游戏主视图
   return (
-    <div className="flex flex-col bg-gray-50" style={{ height: '100dvh', paddingTop: '4rem' }}>
+    <div className="catmouse-game-shell flex flex-col bg-gray-50">
       {/* 顶部工具栏 */}
       <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-gray-100 bg-white/95 px-3 py-2">
         <h1 className="flex items-center gap-1.5 text-lg font-bold text-gray-800">
@@ -589,7 +604,7 @@ export default function CatMousePage() {
 
         {/* 玩家列表：移动端底部面板 / 桌面端右侧栏 */}
         <aside
-          className="absolute inset-x-0 bottom-0 z-10 flex max-h-[45dvh] flex-col overflow-hidden rounded-t-2xl border-t border-gray-100 bg-white/95 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur md:inset-auto md:bottom-3 md:right-3 md:top-3 md:w-80 md:rounded-2xl md:border md:shadow-lg"
+          className="catmouse-player-panel absolute inset-x-0 bottom-0 z-10 flex flex-col overflow-hidden rounded-t-2xl border-t border-gray-100 bg-white/95 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur md:inset-auto md:bottom-3 md:right-3 md:top-3 md:w-80 md:rounded-2xl md:border md:shadow-lg"
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
           <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-100 px-4 py-3">

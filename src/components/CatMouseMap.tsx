@@ -76,6 +76,8 @@ export default function CatMouseMap({ markers, focus = null, onMarkerClick, clas
           } catch {
             // 无 NavigationControl 时手势缩放仍可用
           }
+          // 初始布局后校正一次画布尺寸（容器在初始化瞬间可能还没定高）
+          map.resize()
           setReady(true)
         })
         mapRef.current = map
@@ -153,6 +155,31 @@ export default function CatMouseMap({ markers, focus = null, onMarkerClick, clas
       markerHandlesRef.current.push(entry.handle)
     })
   }, [markers, ready])
+
+  // 容器尺寸变化后必须 map.resize()：横幅出现/消失、移动端地址栏收放、
+  // 横竖屏切换都会改变容器大小，不校正会出现瓦片拉伸、标记与底图错位（移动端高发）
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    let frame = 0
+    const schedule = () => {
+      if (frame) return
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        mapRef.current?.resize()
+      })
+    }
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(schedule) : null
+    observer?.observe(container)
+    window.addEventListener('orientationchange', schedule)
+    window.visualViewport?.addEventListener('resize', schedule)
+    return () => {
+      if (frame) cancelAnimationFrame(frame)
+      observer?.disconnect()
+      window.removeEventListener('orientationchange', schedule)
+      window.visualViewport?.removeEventListener('resize', schedule)
+    }
+  }, [])
 
   // 外部视野控制：仅 focus.nonce 变化触发
   useEffect(() => {

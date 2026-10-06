@@ -279,3 +279,18 @@ body {
 .catmouse-map-label--selected {
   box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
+
+/* 猫鼠游戏全屏壳：老浏览器 100vh 兜底，新浏览器 100dvh（随移动端地址栏收放） */
+.catmouse-game-shell {
+  height: 100vh;
+  height: 100dvh;
+  padding-top: 4rem;
+}
+
+/* 玩家面板高度上限（仅移动端底部面板；桌面端侧栏由 top/bottom 撑满） */
+@media (max-width: 767px) {
+  .catmouse-player-panel {
+    max-height: 45vh;
+    max-height: 45dvh;
+  }
+}
