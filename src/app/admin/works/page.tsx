@@ -89,7 +89,7 @@ export default function WorksPage() {
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
-            className={`rounded-xl px-5 py-2 text-sm font-medium transition-colors ${
+            className={`rounded-xl px-5 py-2.5 min-h-11 text-sm font-medium transition-colors ${
               activeTab === tab.key
                 ? 'bg-gradient-to-r from-anime-pink to-anime-purple text-white'
                 : 'bg-[#2a2a4a] text-gray-400 hover:text-white'
@@ -109,7 +109,7 @@ export default function WorksPage() {
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((work) => (
             <div key={work.id} className="overflow-hidden rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e]">
-              <div className="relative flex h-44 items-center justify-center bg-gradient-to-br from-anime-pink/30 to-anime-purple/30">
+              <div className="relative flex aspect-[16/10] sm:h-44 items-center justify-center bg-gradient-to-br from-anime-pink/30 to-anime-purple/30">
                 {work.image ? (
                   <img src={work.image} alt={work.title} className="h-full w-full object-cover" />
                 ) : (
@@ -137,7 +137,7 @@ export default function WorksPage() {
                   <button
                     type="button"
                     onClick={() => setStatus(work.id, 'approved')}
-                    className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/15 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25"
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/15 py-2 min-h-11 text-xs sm:text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/25"
                   >
                     <Check size={14} />
                     通过
@@ -145,7 +145,7 @@ export default function WorksPage() {
                   <button
                     type="button"
                     onClick={() => setStatus(work.id, 'rejected')}
-                    className="flex items-center justify-center gap-1.5 rounded-xl bg-red-500/15 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/25"
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-red-500/15 py-2 min-h-11 text-xs sm:text-sm font-medium text-red-400 transition-colors hover:bg-red-500/25"
                   >
                     <X size={14} />
                     拒绝
@@ -154,10 +154,10 @@ export default function WorksPage() {
                     type="button"
                     onClick={() => deleteWork(work)}
                     disabled={deletingId === work.id}
-                    className="flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 py-2 text-sm font-medium text-red-300 transition-colors hover:bg-red-500/25 disabled:opacity-60"
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-red-500/10 py-2 min-h-11 min-w-0 text-xs sm:text-sm font-medium text-red-300 transition-colors hover:bg-red-500/25 disabled:opacity-60"
                   >
                     <Trash2 size={14} />
-                    {deletingId === work.id ? '删除中' : '删除'}
+                    <span className="truncate">{deletingId === work.id ? '删除中' : '删除'}</span>
                   </button>
                 </div>
               </div>

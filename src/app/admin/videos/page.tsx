@@ -270,19 +270,19 @@ export default function AdminVideosPage() {
 
   return (
     <div className="space-y-6 pb-24">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-white">视频管理</h1>
           <p className="mt-1 text-sm text-gray-500">上传视频到 R2/S3（最大 500MB）或添加哔哩哔哩视频链接。</p>
         </div>
-        <button type="button" onClick={resetForm} className="flex items-center gap-2 rounded-xl bg-[#1a1a2e] px-4 py-2 text-sm text-white hover:bg-[#23233a]">
+        <button type="button" onClick={resetForm} className="flex w-full shrink-0 items-center gap-2 rounded-xl bg-[#1a1a2e] px-4 py-2.5 text-sm text-white hover:bg-[#23233a] sm:w-auto">
           <Plus size={16} />
           新增视频
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[420px_1fr]">
-        <section className="space-y-5 rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[380px_1fr]">
+        <section className="space-y-5 rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-4 sm:p-6">
           <h2 className="text-base font-semibold text-white">{editingId ? '编辑视频' : '新增视频'}</h2>
           <ImageUploader value={form.cover} uploading={uploading} onUpload={uploadCover} onChange={(value) => update('cover', value)} />
           <Input label="标题" value={form.title} onChange={(value) => update('title', value)} />
@@ -321,7 +321,7 @@ export default function AdminVideosPage() {
                 type="button"
                 onClick={() => fetchBilibiliPreview(true)}
                 disabled={fetchingInfo}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#0f0f1a] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#23233a] disabled:opacity-60"
+                className="inline-flex w-full items-center gap-2 rounded-xl bg-[#0f0f1a] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#23233a] disabled:opacity-60 sm:w-auto"
               >
                 {fetchingInfo ? <Loader2 size={16} className="animate-spin" /> : <Film size={16} />}
                 {fetchingInfo ? '获取中...' : '自动获取封面和标题'}
@@ -332,9 +332,11 @@ export default function AdminVideosPage() {
             <div className="space-y-3">
               <span className="block text-sm text-gray-400">视频文件</span>
               <p className="text-xs text-gray-500">支持 MP4、WebM、MOV、MKV，最大 500MB，推荐 MP4（H.264）以保证浏览器兼容。保存时才会开始上传。</p>
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#0f0f1a] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#23233a]">
+              <label className="flex w-full cursor-pointer flex-wrap items-center gap-2 rounded-xl bg-[#0f0f1a] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#23233a]">
                 <Film size={16} />
-                {file ? `已选择：${file.name}（${formatVideoSize(file.size)}）` : '选择视频文件'}
+                <span className="min-w-0 truncate">
+                  {file ? `已选择：${file.name}（${formatVideoSize(file.size)}）` : '选择视频文件'}
+                </span>
                 <input type="file" accept="video/mp4,video/webm,.mov,.mkv" className="hidden" onChange={selectVideoFile} />
               </label>
               {editingId && !file && (
@@ -381,7 +383,7 @@ export default function AdminVideosPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-6">
+        <section className="rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-4 sm:p-6">
           <h2 className="mb-5 text-base font-semibold text-white">视频列表</h2>
           {loading ? (
             <div className="flex items-center gap-2 text-gray-400">
@@ -419,13 +421,13 @@ export default function AdminVideosPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 md:flex-col md:items-stretch">
-                    <button type="button" onClick={() => editVideo(video)} className="rounded-lg bg-[#23233a] p-2 text-gray-300 hover:text-white" title="编辑">
+                    <button type="button" onClick={() => editVideo(video)} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-[#23233a] p-2.5 text-gray-300 hover:text-white" title="编辑">
                       <Pencil size={16} />
                     </button>
-                    <button type="button" onClick={() => toggleActive(video)} className="rounded-lg bg-[#23233a] px-3 py-2 text-xs text-gray-300 hover:text-white">
+                    <button type="button" onClick={() => toggleActive(video)} className="min-h-11 rounded-lg bg-[#23233a] px-3 py-2 text-xs text-gray-300 hover:text-white">
                       {video.is_active ? '停用' : '启用'}
                     </button>
-                    <button type="button" onClick={() => deleteVideo(video)} className="rounded-lg bg-red-500/10 p-2 text-red-300 hover:text-red-200" title="删除">
+                    <button type="button" onClick={() => deleteVideo(video)} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-red-500/10 p-2.5 text-red-300 hover:text-red-200" title="删除">
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -547,9 +549,9 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative h-7 w-12 rounded-full transition-colors ${checked ? 'bg-anime-pink' : 'bg-[#2a2a4a]'}`}
+        className={`relative h-8 w-14 rounded-full transition-colors ${checked ? 'bg-anime-pink' : 'bg-[#2a2a4a]'}`}
       >
-        <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${checked ? 'left-6' : 'left-1'}`} />
+        <span className={`absolute top-1 h-6 w-6 rounded-full bg-white transition-all ${checked ? 'left-7' : 'left-1'}`} />
       </button>
     </div>
   )

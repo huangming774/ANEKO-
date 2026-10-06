@@ -48,7 +48,7 @@ export default function MembersPage() {
     <div className="space-y-6">
       {error && <div className="rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-red-200">{error}</div>}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Stat label="总成员数" value={members.length} />
         <Stat label="管理员" value={members.filter((m) => m.role === 'admin').length} />
         <Stat label="活跃成员" value={members.filter((m) => m.status === 'active').length} />
@@ -66,8 +66,8 @@ export default function MembersPage() {
         </div>
       </div>
 
-      <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-2xl overflow-hidden">
-        <div className="hidden md:grid grid-cols-[56px_1fr_1.4fr_160px_160px] gap-4 px-6 py-3 border-b border-[#2a2a4a] text-gray-400 text-xs">
+      <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-2xl overflow-x-auto">
+        <div className="hidden lg:grid grid-cols-[56px_1fr_1.4fr_160px_160px] gap-4 px-4 sm:px-6 py-3 border-b border-[#2a2a4a] text-gray-400 text-xs lg:min-w-[640px]">
           <span></span>
           <span>成员</span>
           <span>邮箱</span>
@@ -76,7 +76,7 @@ export default function MembersPage() {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="px-6 py-16 text-center text-gray-500">
+          <div className="px-4 sm:px-6 py-16 text-center text-gray-500">
             <Users size={40} className="mx-auto mb-3 opacity-40" />
             <p>没有成员数据</p>
           </div>
@@ -86,20 +86,20 @@ export default function MembersPage() {
               const isSelf = member.id === selfId;
               const isAdmin = member.role === 'admin';
               return (
-                <div key={member.id} className="grid grid-cols-1 md:grid-cols-[56px_1fr_1.4fr_160px_160px] gap-3 md:gap-4 px-6 py-4 items-center">
-                  <span className="text-2xl hidden md:block">{member.avatar || '🐱'}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl md:hidden">{member.avatar || '🐱'}</span>
+                <div key={member.id} className="grid grid-cols-2 lg:grid-cols-[56px_1fr_1.4fr_160px_160px] gap-3 lg:gap-4 px-4 sm:px-6 py-4 items-center lg:min-w-[640px]">
+                  <span className="text-2xl hidden lg:block">{member.avatar || '🐱'}</span>
+                  <div className="flex items-center gap-3 col-span-2 lg:col-span-1 min-w-0">
+                    <span className="text-2xl lg:hidden">{member.avatar || '🐱'}</span>
                     <span className="text-white font-medium text-sm">{member.display_name || '未命名成员'}</span>
                     {isSelf && <span className="rounded-full bg-anime-pink/20 px-2 py-0.5 text-xs text-anime-pink">你</span>}
                   </div>
-                  <span className="text-gray-400 text-sm truncate">{member.email}</span>
+                  <span className="col-span-2 lg:col-span-1 min-w-0 text-gray-400 text-sm break-all lg:truncate">{member.email}</span>
                   <select
                     value={member.role}
                     disabled={isSelf}
                     title={isSelf ? '不能修改自己的角色' : undefined}
                     onChange={(event) => updateMember(member.id, { role: event.target.value as Profile['role'] })}
-                    className="bg-[#0f0f1a] border border-[#2a2a4a] rounded-xl px-3 py-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-[#0f0f1a] border border-[#2a2a4a] rounded-xl px-3 py-2.5 min-h-11 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="member">成员</option>
                     <option value="admin">管理员</option>
@@ -109,7 +109,7 @@ export default function MembersPage() {
                     disabled={isSelf}
                     title={isSelf ? '不能禁用自己' : isAdmin ? '请先将管理员降级为成员再禁用' : undefined}
                     onChange={(event) => updateMember(member.id, { status: event.target.value as Profile['status'] })}
-                    className="bg-[#0f0f1a] border border-[#2a2a4a] rounded-xl px-3 py-2 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-[#0f0f1a] border border-[#2a2a4a] rounded-xl px-3 py-2.5 min-h-11 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="active">活跃</option>
                     <option value="inactive" disabled={isAdmin}>禁用{isAdmin ? '（先降级）' : ''}</option>

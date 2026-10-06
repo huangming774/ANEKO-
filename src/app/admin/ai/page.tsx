@@ -181,12 +181,12 @@ export default function AdminAiPage() {
 
   return (
     <div className="space-y-6 pb-24">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-white">AI 模型</h1>
           <p className="mt-1 text-sm text-gray-500">配置兼容 OpenAI API 格式的模型，供前台「AI 问答」使用。API Key 仅保存在服务端，不会回显。</p>
         </div>
-        <button type="button" onClick={resetForm} className="flex items-center gap-2 rounded-xl bg-[#1a1a2e] px-4 py-2 text-sm text-white hover:bg-[#23233a]">
+        <button type="button" onClick={resetForm} className="flex w-full shrink-0 items-center gap-2 rounded-xl bg-[#1a1a2e] px-4 py-2.5 text-sm text-white hover:bg-[#23233a] sm:w-auto">
           <Plus size={16} />
           新增模型
         </button>
@@ -194,7 +194,7 @@ export default function AdminAiPage() {
 
       {message && <div className="rounded-xl border border-[#2a2a4a] bg-[#1a1a2e] px-4 py-3 text-gray-200">{message}</div>}
 
-      <section className="rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-6">
+      <section className="rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-4 sm:p-6">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="flex items-center gap-2 text-base font-semibold text-white">
@@ -207,7 +207,7 @@ export default function AdminAiPage() {
             type="button"
             onClick={savePrompt}
             disabled={promptSaving || !promptLoaded}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-anime-pink to-anime-purple px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-anime-pink to-anime-purple px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
           >
             {promptSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
             保存提示词
@@ -223,8 +223,8 @@ export default function AdminAiPage() {
         {promptMessage && <p className="mt-2 text-sm text-gray-400">{promptMessage}</p>}
       </section>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[420px_1fr]">
-        <section className="space-y-5 rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[380px_1fr]">
+        <section className="space-y-5 rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-4 sm:p-6">
           <h2 className="text-base font-semibold text-white">{editingId ? '编辑模型' : '新增模型'}</h2>
           <Input label="模型名称" value={form.name} placeholder="如：GPT-4o / DeepSeek" onChange={(value) => update('name', value)} />
           <Textarea label="描述（可选）" value={form.description} placeholder="显示在前台下拉里的一句话介绍" onChange={(value) => update('description', value)} />
@@ -267,7 +267,7 @@ export default function AdminAiPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-6">
+        <section className="rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-4 sm:p-6">
           <h2 className="mb-5 text-base font-semibold text-white">模型列表</h2>
           {loading ? (
             <div className="flex items-center gap-2 text-gray-400">
@@ -292,20 +292,20 @@ export default function AdminAiPage() {
                       </span>
                       <span className="rounded-full bg-[#23233a] px-2 py-1 text-xs text-gray-400">排序 {model.sort_order}</span>
                     </div>
-                    <p className="mt-2 text-sm text-gray-400">
+                    <p className="mt-2 line-clamp-2 break-words text-sm text-gray-400">
                       <span className="text-gray-300">{model.model_id}</span>
                       {model.description ? ` · ${model.description}` : ''}
                     </p>
                     <p className="mt-1 truncate text-xs text-gray-500">{model.api_base_url}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => editModel(model)} className="rounded-lg bg-[#23233a] p-2 text-gray-300 hover:text-white" title="编辑">
+                    <button type="button" onClick={() => editModel(model)} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-[#23233a] p-2.5 text-gray-300 hover:text-white" title="编辑">
                       <Pencil size={16} />
                     </button>
-                    <button type="button" onClick={() => toggleActive(model)} className="rounded-lg bg-[#23233a] px-3 py-2 text-xs text-gray-300 hover:text-white">
+                    <button type="button" onClick={() => toggleActive(model)} className="min-h-11 rounded-lg bg-[#23233a] px-3 py-2 text-xs text-gray-300 hover:text-white">
                       {model.is_active ? '停用' : '启用'}
                     </button>
-                    <button type="button" onClick={() => deleteModel(model)} className="rounded-lg bg-red-500/10 p-2 text-red-300 hover:text-red-200" title="删除">
+                    <button type="button" onClick={() => deleteModel(model)} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-red-500/10 p-2.5 text-red-300 hover:text-red-200" title="删除">
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -381,9 +381,9 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative h-7 w-12 rounded-full transition-colors ${checked ? 'bg-anime-pink' : 'bg-[#2a2a4a]'}`}
+        className={`relative h-8 w-14 rounded-full transition-colors ${checked ? 'bg-anime-pink' : 'bg-[#2a2a4a]'}`}
       >
-        <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${checked ? 'left-6' : 'left-1'}`} />
+        <span className={`absolute top-1 h-6 w-6 rounded-full bg-white transition-all ${checked ? 'left-7' : 'left-1'}`} />
       </button>
     </div>
   )

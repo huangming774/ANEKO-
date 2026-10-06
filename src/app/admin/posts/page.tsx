@@ -211,17 +211,17 @@ export default function PostsPage() {
         />
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e]">
+      <div className="overflow-x-auto rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e]">
         {filtered.length === 0 ? (
           <div className="py-16 text-center text-gray-500">
             <Megaphone size={40} className="mx-auto mb-3 opacity-40" />
             <p>暂无公告</p>
           </div>
         ) : (
-          <div className="divide-y divide-[#2a2a4a]">
+          <div className="divide-y divide-[#2a2a4a] lg:min-w-[720px]">
             {filtered.map((post) => (
-              <div key={post.id} className="grid grid-cols-1 items-center gap-4 px-6 py-4 md:grid-cols-[96px_1fr_100px_110px_150px]">
-                <div className="aspect-video overflow-hidden rounded-lg bg-[#0f0f1a]">
+              <div key={post.id} className="grid grid-cols-1 items-center gap-4 px-4 sm:px-6 py-4 lg:grid-cols-[96px_1fr_100px_110px_150px]">
+                <div className="w-28 aspect-video lg:w-full overflow-hidden rounded-lg bg-[#0f0f1a]">
                   {post.image ? <img src={post.image} alt={post.title} className="h-full w-full object-cover" /> : null}
                 </div>
                 <div className="min-w-0">
@@ -235,18 +235,18 @@ export default function PostsPage() {
                 <button
                   type="button"
                   onClick={() => patchPost(post.id, { status: post.status === 'published' ? 'draft' : 'published' })}
-                  className="rounded-lg bg-[#2a2a4a] px-3 py-2 text-sm text-gray-300"
+                  className="rounded-lg bg-[#2a2a4a] px-3 py-2 min-h-11 text-sm text-gray-300"
                 >
                   {post.status === 'published' ? '已发布' : '草稿'}
                 </button>
                 <div className="flex justify-end gap-2">
-                  <button type="button" onClick={() => editPost(post)} className="rounded-lg bg-[#2a2a4a] p-2 text-gray-400 hover:text-white" title="编辑">
+                  <button type="button" onClick={() => editPost(post)} className="inline-flex items-center justify-center rounded-lg bg-[#2a2a4a] p-2.5 min-h-11 min-w-11 text-gray-400 hover:text-white" title="编辑">
                     <Pencil size={14} />
                   </button>
-                  <button type="button" onClick={() => patchPost(post.id, { pinned: !post.pinned })} className="rounded-lg bg-[#2a2a4a] p-2 text-gray-400 hover:text-anime-pink" title="置顶">
+                  <button type="button" onClick={() => patchPost(post.id, { pinned: !post.pinned })} className="inline-flex items-center justify-center rounded-lg bg-[#2a2a4a] p-2.5 min-h-11 min-w-11 text-gray-400 hover:text-anime-pink" title="置顶">
                     <Pin size={14} />
                   </button>
-                  <button type="button" onClick={() => deletePost(post)} className="rounded-lg bg-[#2a2a4a] p-2 text-gray-400 hover:text-red-400" title="删除">
+                  <button type="button" onClick={() => deletePost(post)} className="inline-flex items-center justify-center rounded-lg bg-[#2a2a4a] p-2.5 min-h-11 min-w-11 text-gray-400 hover:text-red-400" title="删除">
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -273,7 +273,7 @@ function ImageUploader({
   return (
     <div className="space-y-3">
       <span className="block text-sm text-gray-400">公告图片</span>
-      <div className="aspect-video overflow-hidden rounded-xl border border-[#2a2a4a] bg-[#0f0f1a]">
+      <div className="aspect-video max-w-[200px] xl:max-w-none overflow-hidden rounded-xl border border-[#2a2a4a] bg-[#0f0f1a]">
         {value ? (
           <img src={value} alt="公告预览" className="h-full w-full object-cover" />
         ) : (
@@ -313,7 +313,7 @@ function Textarea({ label, value, onChange }: { label: string; value: string; on
         value={value}
         onChange={(event) => onChange(event.target.value)}
         rows={5}
-        className="w-full resize-none rounded-xl border border-[#2a2a4a] bg-[#0f0f1a] px-4 py-3 text-sm text-white focus:border-anime-pink focus:outline-none"
+        className="w-full resize-y min-h-[120px] rounded-xl border border-[#2a2a4a] bg-[#0f0f1a] px-4 py-3 text-sm text-white focus:border-anime-pink focus:outline-none"
       />
     </label>
   )
@@ -326,9 +326,9 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative h-7 w-12 rounded-full transition-colors ${checked ? 'bg-anime-pink' : 'bg-[#2a2a4a]'}`}
+        className={`relative h-8 w-14 rounded-full transition-colors ${checked ? 'bg-anime-pink' : 'bg-[#2a2a4a]'}`}
       >
-        <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${checked ? 'left-6' : 'left-1'}`} />
+        <span className={`absolute top-1 h-6 w-6 rounded-full bg-white transition-all ${checked ? 'left-7' : 'left-1'}`} />
       </button>
     </div>
   )

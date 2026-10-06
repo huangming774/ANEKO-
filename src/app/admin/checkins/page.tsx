@@ -186,12 +186,12 @@ export default function AdminCheckinsPage() {
 
   return (
     <div className="space-y-6 pb-24">
-      <div className="flex items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-xl font-bold text-white">签到活动</h1>
           <p className="mt-1 text-sm text-gray-500">创建限时定位打卡活动，开启后游客可在「活动签到」页填 CN + 定位完成签到。</p>
         </div>
-        <button type="button" onClick={resetForm} className="flex items-center gap-2 rounded-xl bg-[#1a1a2e] px-4 py-2 text-sm text-white hover:bg-[#23233a]">
+        <button type="button" onClick={resetForm} className="flex w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a1a2e] px-4 py-2.5 text-sm text-white hover:bg-[#23233a]">
           <Plus size={16} />
           新增活动
         </button>
@@ -200,7 +200,7 @@ export default function AdminCheckinsPage() {
       {message && <div className="rounded-xl border border-[#2a2a4a] bg-[#1a1a2e] px-4 py-3 text-gray-200">{message}</div>}
 
       {/* 创建 / 编辑表单 */}
-      <section className="space-y-4 rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-6">
+      <section className="space-y-4 rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-4 sm:p-6">
         <h2 className="text-base font-semibold text-white">{editingId ? '编辑活动' : '新增活动'}</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Field label="活动标题">
@@ -261,7 +261,7 @@ export default function AdminCheckinsPage() {
       </section>
 
       {/* 活动列表 */}
-      <section className="rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-6">
+      <section className="rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-4 sm:p-6">
         <h2 className="mb-5 text-base font-semibold text-white">活动列表</h2>
         {loading ? (
           <div className="flex items-center gap-2 text-gray-400">
@@ -285,7 +285,7 @@ export default function AdminCheckinsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <MapPin size={16} className="text-anime-pink" />
-                      <h3 className="truncate text-base font-semibold text-white">{activity.title}</h3>
+                      <h3 className="min-w-0 max-w-full truncate text-base font-semibold text-white">{activity.title}</h3>
                       <span className={`rounded-full px-2 py-1 text-xs ${activity.is_active ? 'bg-emerald-500/15 text-emerald-300' : 'bg-gray-500/15 text-gray-400'}`}>
                         {activity.is_active ? '已开启' : '已关闭'}
                       </span>
@@ -294,30 +294,30 @@ export default function AdminCheckinsPage() {
                       )}
                       <span className="rounded-full bg-[#23233a] px-2 py-1 text-xs text-gray-400">{activity.checkin_count} 人签到</span>
                     </div>
-                    <p className="mt-2 text-sm text-gray-400">
+                    <p className="mt-2 text-xs sm:text-sm text-gray-400 break-words">
                       {new Date(activity.starts_at).toLocaleString('zh-CN')} — {new Date(activity.ends_at).toLocaleString('zh-CN')}
                     </p>
                     {activity.note && <p className="mt-1 text-xs text-gray-500">{activity.note}</p>}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setSelectedId(selectedId === activity.id ? null : activity.id)}
-                      className="rounded-lg bg-[#23233a] px-3 py-2 text-xs text-gray-300 hover:text-white"
+                      className="rounded-lg bg-[#23233a] px-3 py-2.5 min-h-11 text-xs text-gray-300 hover:text-white"
                     >
                       {selectedId === activity.id ? '收起看板' : '查看签到'}
                     </button>
-                    <button type="button" onClick={() => editActivity(activity)} className="rounded-lg bg-[#23233a] p-2 text-gray-300 hover:text-white" title="编辑">
+                    <button type="button" onClick={() => editActivity(activity)} className="rounded-lg bg-[#23233a] p-2.5 min-h-11 min-w-11 inline-flex items-center justify-center text-gray-300 hover:text-white" title="编辑">
                       <Pencil size={16} />
                     </button>
                     <button
                       type="button"
                       onClick={() => toggleActive(activity)}
-                      className="rounded-lg bg-[#23233a] px-3 py-2 text-xs text-gray-300 hover:text-white"
+                      className="rounded-lg bg-[#23233a] px-3 py-2.5 min-h-11 text-xs text-gray-300 hover:text-white"
                     >
                       {activity.is_active ? '关闭' : '开启'}
                     </button>
-                    <button type="button" onClick={() => deleteActivity(activity)} className="rounded-lg bg-red-500/10 p-2 text-red-300 hover:text-red-200" title="删除">
+                    <button type="button" onClick={() => deleteActivity(activity)} className="rounded-lg bg-red-500/10 p-2.5 min-h-11 min-w-11 inline-flex items-center justify-center text-red-300 hover:text-red-200" title="删除">
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -330,7 +330,7 @@ export default function AdminCheckinsPage() {
 
       {/* 签到看板 */}
       {selected && (
-        <section className="space-y-5 rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-6">
+        <section className="space-y-5 rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-base font-semibold text-white">「{selected.title}」签到看板</h2>
             <button
@@ -344,13 +344,13 @@ export default function AdminCheckinsPage() {
             </button>
           </div>
 
-          <CheckinMap markers={markers} fitOnMarkers className="h-96 border border-[#2a2a4a]" />
+          <CheckinMap markers={markers} fitOnMarkers className="h-64 sm:h-96 border border-[#2a2a4a]" />
 
           {checkins.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[#2a2a4a] px-4 py-10 text-center text-gray-500">暂无签到记录</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full min-w-[640px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-[#2a2a4a] text-gray-400">
                     <th className="px-3 py-3 font-medium">CN</th>

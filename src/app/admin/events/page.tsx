@@ -108,7 +108,7 @@ export default function EventsPage() {
         <button className="px-5 py-3 bg-gradient-to-r from-anime-pink to-anime-purple rounded-xl text-white text-sm font-medium">创建活动</button>
       </form>
 
-      <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-2xl p-4 flex gap-2">
+      <div className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-2xl p-4 flex flex-wrap gap-2">
         {['all', 'upcoming', 'ongoing', 'ended'].map((item) => (
           <button key={item} onClick={() => setStatus(item)} className={`px-4 py-2 rounded-xl text-sm ${status === item ? 'bg-anime-pink text-white' : 'bg-[#2a2a4a] text-gray-400'}`}>
             {item === 'all' ? '全部' : item === 'upcoming' ? '即将开始' : item === 'ongoing' ? '进行中' : '已结束'}
@@ -124,17 +124,17 @@ export default function EventsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {filtered.map((event) => (
-            <div key={event.id} className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-2xl p-5 space-y-3">
-              <h3 className="text-white font-semibold">{event.title}</h3>
-              <p className="text-gray-400 text-sm">{event.start_date} {event.start_time} · {event.location}</p>
+            <div key={event.id} className="bg-[#1a1a2e] border border-[#2a2a4a] rounded-2xl p-5 space-y-3 min-w-0">
+              <h3 className="text-white font-semibold truncate">{event.title}</h3>
+              <p className="text-gray-400 text-sm break-words">{event.start_date} {event.start_time} · {event.location}</p>
               <p className="text-gray-500 text-sm line-clamp-2">{event.description || '暂无描述'}</p>
               <div className="flex items-center justify-between">
-                <select value={event.status} onChange={(e) => patchEvent(event.id, { status: e.target.value as EventItem['status'] })} className="bg-[#0f0f1a] border border-[#2a2a4a] rounded-xl px-3 py-2 text-sm text-white">
+                <select value={event.status} onChange={(e) => patchEvent(event.id, { status: e.target.value as EventItem['status'] })} className="bg-[#0f0f1a] border border-[#2a2a4a] rounded-xl px-3 py-2.5 text-sm text-white">
                   <option value="upcoming">即将开始</option>
                   <option value="ongoing">进行中</option>
                   <option value="ended">已结束</option>
                 </select>
-                <button onClick={() => deleteEvent(event.id)} className="p-2 rounded-lg bg-[#2a2a4a] text-gray-400 hover:text-red-400">
+                <button onClick={() => deleteEvent(event.id)} className="p-2.5 min-h-11 min-w-11 inline-flex items-center justify-center rounded-lg bg-[#2a2a4a] text-gray-400 hover:text-red-400">
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -153,9 +153,9 @@ export default function EventsPage() {
                     applications[event.id].map((application) => (
                       <div key={application.id} className="rounded-lg border border-[#2a2a4a] p-3">
                         <div className="flex items-start justify-between gap-3">
-                          <div>
+                          <div className="min-w-0">
                             <div className="font-medium text-white">{application.name}</div>
-                            <div className="mt-1 text-xs text-gray-400">
+                            <div className="mt-1 text-xs text-gray-400 break-all">
                               手机：{application.phone || '-'} · QQ：{application.qq || '-'}
                             </div>
                             {application.note && <div className="mt-1 text-xs text-gray-500">{application.note}</div>}

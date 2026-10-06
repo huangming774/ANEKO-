@@ -101,7 +101,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Section title="基本信息">
           <Input label="社团名称" value={form.club_name || ''} onChange={(v) => update('club_name', v)} />
           <Textarea label="社团简介" value={form.club_description || ''} onChange={(v) => update('club_description', v)} />
@@ -126,9 +126,9 @@ export default function SettingsPage() {
         </Section>
       </div>
 
-      <div className="fixed bottom-8 right-8 z-40 flex items-center gap-3">
+      <div className="fixed bottom-4 right-4 left-4 z-40 flex flex-wrap items-center justify-end gap-3 sm:left-auto sm:bottom-8 sm:right-8">
         {dirty && message === '' && (
-          <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300 shadow-lg">
+          <div className="max-w-[60vw] truncate rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300 shadow-lg sm:max-w-xs">
             有未保存的修改，记得点击「保存设置」
           </div>
         )}
@@ -151,7 +151,7 @@ export default function SettingsPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-5 rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-6">
+    <div className="space-y-5 rounded-2xl border border-[#2a2a4a] bg-[#1a1a2e] p-4 sm:p-6">
       <h3 className="text-base font-semibold text-white">{title}</h3>
       {children}
     </div>
@@ -172,7 +172,7 @@ function LogoUploader({
   return (
     <div className="space-y-3">
       <span className="block text-sm text-gray-400">左上角 Logo</span>
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-[#2a2a4a] bg-[#0f0f1a] text-gray-500">
           {value ? <img src={value} alt="Logo" className="h-full w-full object-cover" /> : <ImagePlus size={24} />}
         </div>
@@ -221,9 +221,9 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative h-7 w-12 rounded-full transition-colors ${checked ? 'bg-anime-pink' : 'bg-[#2a2a4a]'}`}
+        className={`relative h-8 w-14 rounded-full transition-colors ${checked ? 'bg-anime-pink' : 'bg-[#2a2a4a]'}`}
       >
-        <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${checked ? 'left-6' : 'left-1'}`} />
+        <span className={`absolute top-1 h-6 w-6 rounded-full bg-white transition-all ${checked ? 'left-7' : 'left-1'}`} />
       </button>
     </div>
   )
