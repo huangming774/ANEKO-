@@ -9,6 +9,7 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  Crosshair,
   Home,
   Image,
   ImagePlus,
@@ -35,6 +36,7 @@ const sidebarMenu = [
   { id: 'ai', label: 'AI模型', icon: <Bot size={20} />, href: '/admin/ai' },
   { id: 'events', label: '活动管理', icon: <Calendar size={20} />, href: '/admin/events' },
   { id: 'checkins', label: '签到活动', icon: <MapPin size={20} />, href: '/admin/checkins' },
+  { id: 'catmouse', label: '猫鼠游戏', icon: <Crosshair size={20} />, href: '/admin/catmouse' },
   { id: 'posts', label: '公告管理', icon: <Megaphone size={20} />, href: '/admin/posts' },
   { id: 'settings', label: '系统设置', icon: <Settings size={20} />, href: '/admin/settings' },
 ]

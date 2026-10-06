@@ -5,9 +5,12 @@
 
 import { fail } from '@/lib/api-utils'
 import { CATMOUSE_STALE_MS, type CatMousePlayer, type CatMouseSyncRequest } from '@/lib/catmouse'
-import { hasRedisConfig, redisHDel, redisHGetAll, redisHSet } from '@/lib/redis'
+import { hasRedisConfig, redisDel, redisGet, redisHDel, redisHGetAll, redisHSet, redisSet } from '@/lib/redis'
 
 const PLAYERS_KEY = 'catmouse:players'
+
+/** 全局开关键：字符串 '1'/'0'，缺省视为开启 */
+const ENABLED_KEY = 'catmouse:enabled'
 
 /** 同 id 两次上报最小间隔：挡 StrictMode 双触发/双开造成的写放大（服务端时钟判定） */
 const MIN_SYNC_INTERVAL_MS = 400
@@ -137,4 +140,45 @@ function findById(players: CatMousePlayer[], id: string): CatMousePlayer | undef
 
 function sortByTsDesc(players: CatMousePlayer[]): CatMousePlayer[] {
   return players.slice().sort((a, b) => b.ts - a.ts)
+}
+
+// ---- 全局开关（后台可暂停游戏；公开 sync/players 经 requireGameEnabled 拦截） ----
+
+/** 游戏是否开启：键缺省视为开启，仅显式 '0' 为暂停 */
+export async function isGameEnabled(): Promise<boolean> {
+  const value = await redisGet(ENABLED_KEY)
+  return value !== '0'
+}
+
+export async function setGameEnabled(enabled: boolean): Promise<void> {
+  await redisSet(ENABLED_KEY, enabled ? '1' : '0')
+}
+
+/** 暂停闸门：已暂停返回 403 响应（玩家端以 res.status===403 识别），否则 null。
+ *  Redis 异常时 502——与 sync/players 的 Redis 故障口径一致，不误放行为开。 */
+export async function requireGameEnabled(): Promise<Response | null> {
+  try {
+    if (await isGameEnabled()) return null
+  } catch (error) {
+    console.error('[catmouse] 开关读取失败:', error)
+    return failNoStore('实时位置服务暂不可用', 502)
+  }
+  return failNoStore('游戏已暂停，请稍后再来', 403)
+}
+
+// ---- 管理端（/api/admin/catmouse/*） ----
+
+/** 管理端在线名单：与玩家端同口径（仅 45s 内活跃），ts 降序 */
+export async function listAllPlayersAdmin(): Promise<CatMousePlayer[]> {
+  return listLivePlayers()
+}
+
+/** 清空全部玩家（DEL 整键最简单可靠） */
+export async function clearAllPlayers(): Promise<void> {
+  await redisDel(PLAYERS_KEY)
+}
+
+/** 踢出单个玩家（幂等：不存在的 id 空操作） */
+export async function kickPlayer(id: string): Promise<void> {
+  await removePlayer(id)
 }

@@ -51,6 +51,7 @@ export default function CatMousePage() {
   const [players, setPlayers] = useState<CatMousePlayer[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [netDown, setNetDown] = useState(false)
+  const [paused, setPaused] = useState(false)
   const [panelOpen, setPanelOpen] = useState(true)
   const [mapFocus, setMapFocus] = useState<CatMouseMapFocus | null>(null)
   const [nowTs, setNowTs] = useState(() => Date.now())
@@ -60,6 +61,7 @@ export default function CatMousePage() {
   const identityRef = useRef<Identity | null>(null)
   const coordsRef = useRef<Coords | null>(null)
   const netDownRef = useRef(false)
+  const pausedRef = useRef(false)
   const flewToSelfRef = useRef(false)
 
   // 恢复本地身份
@@ -148,7 +150,20 @@ export default function CatMousePage() {
         data?: { players?: CatMousePlayer[] }
         error?: string
       }
+      if (res.status === 403) {
+        // 管理员暂停了游戏：清空他人位置、持续轮询以便恢复后自动回来
+        if (!pausedRef.current) {
+          pausedRef.current = true
+          setPaused(true)
+        }
+        setPlayers([])
+        return
+      }
       if (!res.ok) throw new Error(payload.error || '同步失败')
+      if (pausedRef.current) {
+        pausedRef.current = false
+        setPaused(false)
+      }
       const list = payload.data?.players
       setPlayers(Array.isArray(list) ? list : [])
       if (netDownRef.current) {
@@ -461,6 +476,11 @@ export default function CatMousePage() {
       </header>
 
       {/* 状态细条 */}
+      {paused && (
+        <div className="shrink-0 bg-red-50 px-4 py-1.5 text-center text-xs text-red-500">
+          游戏已被管理员暂停，稍后自动恢复…
+        </div>
+      )}
       {netDown && (
         <div className="shrink-0 bg-amber-50 px-4 py-1.5 text-center text-xs text-amber-600">
           网络不稳定，正在重试…

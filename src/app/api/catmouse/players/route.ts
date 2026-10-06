@@ -4,6 +4,7 @@ import {
   noStoreHeaders,
   listLivePlayers,
   requireCatmouseStore,
+  requireGameEnabled,
 } from '@/lib/catmouse-store'
 import { enforceRateLimit } from '@/lib/rate-limit'
 
@@ -25,6 +26,10 @@ export async function GET(request: Request) {
 
   const notReady = requireCatmouseStore()
   if (notReady) return notReady
+
+  // 后台暂停闸门：玩家端以 403 识别暂停态
+  const paused = await requireGameEnabled()
+  if (paused) return paused
 
   try {
     const players = await listLivePlayers()
