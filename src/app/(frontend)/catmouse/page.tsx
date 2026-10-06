@@ -5,7 +5,7 @@
 // 坐标仅实时共享，45 秒无上报自动下线，不落库。
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Crosshair, Loader2, MapPin, Pencil, RotateCcw, Users, X } from 'lucide-react'
+import { Crosshair, Loader2, MapPin, Pencil, Timer, Users, X } from 'lucide-react'
 import CatMouseMap, { type CatMouseMapFocus, type CatMouseMapMarker } from '@/components/CatMouseMap'
 import {
   CATMOUSE_CN_MAX,
@@ -51,7 +51,8 @@ export default function CatMousePage() {
   const [players, setPlayers] = useState<CatMousePlayer[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [netDown, setNetDown] = useState(false)
-  const [paused, setPaused] = useState(false)
+  // 游戏开关：null=检查中，false=游戏未开始（禁入、不显示 CN 表单）
+  const [gameOpen, setGameOpen] = useState<boolean | null>(null)
   const [panelOpen, setPanelOpen] = useState(true)
   const [mapFocus, setMapFocus] = useState<CatMouseMapFocus | null>(null)
   const [nowTs, setNowTs] = useState(() => Date.now())
@@ -61,7 +62,7 @@ export default function CatMousePage() {
   const identityRef = useRef<Identity | null>(null)
   const coordsRef = useRef<Coords | null>(null)
   const netDownRef = useRef(false)
-  const pausedRef = useRef(false)
+  const gameOpenRef = useRef<boolean | null>(null)
   const flewToSelfRef = useRef(false)
 
   // 恢复本地身份
@@ -88,6 +89,36 @@ export default function CatMousePage() {
     const timer = setInterval(() => setNowTs(Date.now()), 1000)
     return () => clearInterval(timer)
   }, [])
+
+  // 入场前的游戏开关探测：未加入时也要知道「游戏未开始」，禁入并藏起 CN 表单。
+  // GET /players 无副作用：200=开启，403=未开始；每 5 秒查一次，开启后自动出现加入卡片。
+  useEffect(() => {
+    if (identity) return
+    let cancelled = false
+    const check = async () => {
+      try {
+        const res = await fetch('/api/catmouse/players')
+        if (cancelled) return
+        const open = res.status !== 403
+        gameOpenRef.current = open
+        setGameOpen(open)
+      } catch {
+        // 网络异常按开启处理（先让玩家能填 CN，提交时再报错）
+        if (!cancelled && gameOpenRef.current === null) {
+          gameOpenRef.current = true
+          setGameOpen(true)
+        }
+      }
+    }
+    void check()
+    const timer = setInterval(() => {
+      if (!document.hidden) void check()
+    }, 5000)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [identity])
 
   // 持续定位：入场后一直 watch，首个定位到手才开始上报
   useEffect(() => {
@@ -151,18 +182,16 @@ export default function CatMousePage() {
         error?: string
       }
       if (res.status === 403) {
-        // 管理员暂停了游戏：清空他人位置、持续轮询以便恢复后自动回来
-        if (!pausedRef.current) {
-          pausedRef.current = true
-          setPaused(true)
-        }
+        // 游戏未开始（管理员未开启/已关闭）：清空他人位置、持续轮询以便开启后自动回来
+        gameOpenRef.current = false
+        setGameOpen(false)
         setPlayers([])
         return
       }
       if (!res.ok) throw new Error(payload.error || '同步失败')
-      if (pausedRef.current) {
-        pausedRef.current = false
-        setPaused(false)
+      if (gameOpenRef.current !== true) {
+        gameOpenRef.current = true
+        setGameOpen(true)
       }
       const list = payload.data?.players
       setPlayers(Array.isArray(list) ? list : [])
@@ -367,12 +396,40 @@ export default function CatMousePage() {
     </div>
   )
 
-  // 水合前不渲染，避免加入卡片闪现
-  if (!joined) {
+  // 水合/开关检查完成前不渲染，避免加入卡片闪现
+  if (!joined || gameOpen === null) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-400">
         <Loader2 size={20} className="mr-2 animate-spin" />
         加载中...
+      </div>
+    )
+  }
+
+  // 游戏未开始：禁入页（不显示 CN 表单，开启后自动出现加入卡片）
+  if (!gameOpen) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="relative overflow-hidden bg-gradient-to-r from-anime-pink to-anime-purple py-16">
+          <div className="mx-auto max-w-7xl px-4 text-center text-white">
+            <h1 className="mb-4 text-5xl font-bold font-round md:text-7xl">猫鼠游戏</h1>
+            <p className="text-lg text-white/80">填入你的 CN，地图上实时追踪彼此的位置</p>
+          </div>
+        </div>
+
+        <div className="mx-auto max-w-2xl px-4 py-10">
+          <section className="rounded-2xl border border-gray-100 bg-white p-8 text-center">
+            <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-anime-pink/10">
+              <Timer size={32} className="text-anime-pink" />
+            </span>
+            <h2 className="text-2xl font-bold text-gray-800">游戏未开始</h2>
+            <p className="mt-3 text-sm leading-6 text-gray-500">
+              管理员开启后即可填写 CN 加入游戏。
+              <br />
+              页面会自动检测状态，无需刷新。
+            </p>
+          </section>
+        </div>
       </div>
     )
   }
@@ -476,11 +533,6 @@ export default function CatMousePage() {
       </header>
 
       {/* 状态细条 */}
-      {paused && (
-        <div className="shrink-0 bg-red-50 px-4 py-1.5 text-center text-xs text-red-500">
-          游戏已被管理员暂停，稍后自动恢复…
-        </div>
-      )}
       {netDown && (
         <div className="shrink-0 bg-amber-50 px-4 py-1.5 text-center text-xs text-amber-600">
           网络不稳定，正在重试…

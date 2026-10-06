@@ -144,10 +144,13 @@ function sortByTsDesc(players: CatMousePlayer[]): CatMousePlayer[] {
 
 // ---- 全局开关（后台可暂停游戏；公开 sync/players 经 requireGameEnabled 拦截） ----
 
-/** 游戏是否开启：键缺省视为开启，仅显式 '0' 为暂停 */
+/** 游戏是否开启：键缺省视为开启，仅显式 '0' 为暂停。
+ *  注意：Upstash 自动反序列化会把写入的 '0' 读回成数字 0，
+ *  必须用 String() 归一后再比较，严格 !== '0' 会把暂停态误判为开启。 */
 export async function isGameEnabled(): Promise<boolean> {
   const value = await redisGet(ENABLED_KEY)
-  return value !== '0'
+  if (value === null || value === undefined) return true
+  return String(value) !== '0'
 }
 
 export async function setGameEnabled(enabled: boolean): Promise<void> {
