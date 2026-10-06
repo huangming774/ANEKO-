@@ -201,7 +201,14 @@ export default function CatMouseMap({ markers, focus = null, onMarkerClick, clas
     )
   }
 
-  return <div ref={containerRef} className={className} />
+  // 外层承担布局（absolute inset-0 / 固定高度），内层是 mapbox 容器：
+  // mapbox-gl.css 运行时后注入，其 .mapboxgl-map{position:relative} 会覆盖
+  // Tailwind 的 .absolute，导致 inset-0 不再拉伸、容器高度塌缩为 0（整图白屏）。
+  return (
+    <div className={className}>
+      <div ref={containerRef} className="h-full w-full" />
+    </div>
+  )
 }
 
 function labelClass(marker: CatMouseMapMarker): string {

@@ -53,7 +53,8 @@ export default function CatMousePage() {
   const [netDown, setNetDown] = useState(false)
   // 游戏开关：null=检查中，false=游戏未开始（禁入、不显示 CN 表单）
   const [gameOpen, setGameOpen] = useState<boolean | null>(null)
-  const [panelOpen, setPanelOpen] = useState(true)
+  // 移动端默认收起玩家面板，把视野让给地图（桌面端侧栏常驻展开）
+  const [panelOpen, setPanelOpen] = useState(() => typeof window === 'undefined' || window.innerWidth >= 768)
   const [mapFocus, setMapFocus] = useState<CatMouseMapFocus | null>(null)
   const [nowTs, setNowTs] = useState(() => Date.now())
   // watchPosition 重启计数（「重试」按钮触发）
