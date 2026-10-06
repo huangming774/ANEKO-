@@ -37,7 +37,9 @@ export async function GET(request: Request) {
   const supabase = await createClient()
   const { searchParams } = new URL(request.url)
   const status = searchParams.get('status')
-  const limit = Number(searchParams.get('limit')) || 0
+  // limit 会拼进缓存 key：只接受 1..100 的整数，其余一律归一化为 0（不截断），防止任意参数值撑爆键空间
+  const limitRaw = Number(searchParams.get('limit'))
+  const limit = Number.isInteger(limitRaw) && limitRaw > 0 && limitRaw <= 100 ? limitRaw : 0
 
   const load = async (): Promise<Response> => {
     let query = supabase

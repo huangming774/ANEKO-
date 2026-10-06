@@ -23,18 +23,6 @@ export function hasRedisConfig() {
   return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 }
 
-// KEYS 是 O(N)：仅当 Upstash 实例专用于本项目、keyspace 只有 cache:* 短 TTL 键时使用
-export async function redisKeys(pattern: string): Promise<string[]> {
-  return redis.keys(pattern);
-}
-
-export async function redisDelMany(keys: string[]) {
-  if (keys.length === 0) {
-    return 0;
-  }
-  return redis.del(...keys);
-}
-
 // ====== 常用操作封装 ======
 
 // --- 字符串操作 ---
@@ -60,6 +48,14 @@ export async function redisSetJSON(key: string, value: object, ttl?: number) {
 
 export async function redisGetJSON<T = object>(key: string): Promise<T | null> {
   return redis.get(key);
+}
+
+/** MGET 一拍读多个 JSON 键；缺失的键对应位置为 null。比逐键 GET 少 (n-1) 次往返 */
+export async function redisMGetJSON<T = unknown>(keys: string[]): Promise<(T | null)[]> {
+  if (keys.length === 0) {
+    return [];
+  }
+  return redis.mget<T[]>(...keys) as Promise<(T | null)[]>;
 }
 
 // --- Hash 操作 ---
