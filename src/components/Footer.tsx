@@ -1,28 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Globe, Mail, MessageCircle, Phone, Play, Smartphone } from 'lucide-react'
+import { Mail, Phone } from 'lucide-react'
 import { apiRequest } from '@/lib/client-api'
 import type { SiteSettings } from '@/lib/app-types'
 
-interface SocialLink {
-  name: string
-  icon: string
-  href: string
-}
-
-interface FooterProps {
-  socialLinks: SocialLink[]
-}
-
-const iconMap: { [key: string]: React.ReactNode } = {
-  Globe: <Globe size={20} />,
-  Play: <Play size={20} />,
-  MessageCircle: <MessageCircle size={20} />,
-  Smartphone: <Smartphone size={20} />,
-}
-
-export default function Footer({ socialLinks }: FooterProps) {
+export default function Footer() {
   const [settings, setSettings] = useState<SiteSettings | null>(null)
 
   useEffect(() => {
@@ -39,7 +22,7 @@ export default function Footer({ socialLinks }: FooterProps) {
   return (
     <footer className="bg-gradient-to-br from-anime-dark to-gray-900 py-16 text-white">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
           <div>
             <h3 className="mb-4 text-2xl font-bold gradient-text">{clubName}</h3>
             <p className="mb-4 leading-7 text-gray-400">{description}</p>
@@ -51,22 +34,6 @@ export default function Footer({ socialLinks }: FooterProps) {
             <div className="space-y-3">
               <ContactLine icon={<Mail size={16} />} label="邮箱" value={contactEmail || '后台未填写'} />
               <ContactLine icon={<Phone size={16} />} label="电话" value={contactPhone || '后台未填写'} />
-            </div>
-          </div>
-
-          <div>
-            <h4 className="mb-4 text-lg font-semibold">关注我们</h4>
-            <div className="flex space-x-4">
-              {socialLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 transition-all duration-300 hover:scale-110 hover:bg-anime-pink"
-                  title={link.name}
-                >
-                  {iconMap[link.icon]}
-                </a>
-              ))}
             </div>
           </div>
         </div>
