@@ -28,6 +28,9 @@ export async function PATCH(request: Request) {
   if (auth.response) return auth.response
 
   const body = await request.json().catch(() => ({}))
+  if (body.join_application_enabled !== undefined && typeof body.join_application_enabled !== 'boolean') {
+    return fail('开放入社报名必须是布尔值', 400)
+  }
   const updates = {
     club_name: body.club_name === undefined ? undefined : readString(body.club_name),
     club_description: body.club_description === undefined ? undefined : readString(body.club_description),
@@ -38,6 +41,7 @@ export async function PATCH(request: Request) {
     site_description: body.site_description === undefined ? undefined : readString(body.site_description),
     announcement_banner: body.announcement_banner,
     open_registration: body.open_registration,
+    join_application_enabled: body.join_application_enabled,
     redis_enabled: body.redis_enabled === undefined ? undefined : Boolean(body.redis_enabled),
   }
 

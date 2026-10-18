@@ -128,6 +128,7 @@ create table if not exists public.site_settings (
   site_description text not null default 'ANEKO动漫社官方网站',
   announcement_banner boolean not null default true,
   open_registration boolean not null default true,
+  join_application_enabled boolean not null default true,
   email_notification boolean not null default true,
   new_member_notification boolean not null default true,
   new_work_notification boolean not null default true,
@@ -378,7 +379,11 @@ drop policy if exists "join_applications_insert_public" on public.join_applicati
 create policy "join_applications_insert_public" on public.join_applications
 for insert
 to anon, authenticated
-with check (true);
+with check (exists (
+  select 1
+  from public.site_settings
+  where id = true and join_application_enabled = true
+));
 
 drop policy if exists "join_applications_admin_read" on public.join_applications;
 create policy "join_applications_admin_read" on public.join_applications for select using (public.is_admin());

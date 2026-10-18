@@ -487,6 +487,7 @@ export type Database = {
           new_member_notification: boolean
           new_work_notification: boolean
           open_registration: boolean
+          join_application_enabled: boolean
           redis_enabled: boolean
           site_description: string
           site_title: string
@@ -506,6 +507,7 @@ export type Database = {
           new_member_notification?: boolean
           new_work_notification?: boolean
           open_registration?: boolean
+          join_application_enabled?: boolean
           redis_enabled?: boolean
           site_description?: string
           site_title?: string
@@ -525,6 +527,7 @@ export type Database = {
           new_member_notification?: boolean
           new_work_notification?: boolean
           open_registration?: boolean
+          join_application_enabled?: boolean
           redis_enabled?: boolean
           site_description?: string
           site_title?: string

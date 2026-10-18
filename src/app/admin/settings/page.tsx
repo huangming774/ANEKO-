@@ -16,6 +16,7 @@ const defaults: Partial<SiteSettings> = {
   site_description: 'ANEKO动漫社官方网站',
   announcement_banner: true,
   open_registration: true,
+  join_application_enabled: true,
   redis_enabled: false,
 }
 
@@ -115,6 +116,7 @@ export default function SettingsPage() {
           <Textarea label="网站描述" value={form.site_description || ''} onChange={(v) => update('site_description', v)} />
           <Toggle label="公告横幅" checked={Boolean(form.announcement_banner)} onChange={(v) => update('announcement_banner', v)} />
           <Toggle label="开放注册" checked={Boolean(form.open_registration)} onChange={(v) => update('open_registration', v)} />
+          <Toggle label="开放入社报名" checked={Boolean(form.join_application_enabled)} onChange={(v) => update('join_application_enabled', v)} />
         </Section>
 
         <Section title="缓存">

@@ -24,6 +24,20 @@ export async function POST(request: Request) {
   if (limited) return limited
 
   const supabase = await createClient()
+  const { data: settings, error: settingsError } = await supabase
+    .from('site_settings')
+    .select('join_application_enabled')
+    .eq('id', true)
+    .maybeSingle()
+
+  if (settingsError) {
+    return fail(normalizeSupabaseError(settingsError), 500, settingsError)
+  }
+
+  if (settings?.join_application_enabled === false) {
+    return fail('报名暂未开放', 403)
+  }
+
   const body = await request.json().catch(() => ({}))
   const name = readString(body.name)
   const studentId = readString(body.student_id)
