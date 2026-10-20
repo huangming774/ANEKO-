@@ -19,6 +19,7 @@ import {
   Megaphone,
   Menu,
   Settings,
+  UserRound,
   UserPlus,
   Users,
   Video,
@@ -39,6 +40,7 @@ const sidebarMenu = [
   { id: 'catmouse', label: '猫鼠游戏', icon: <Crosshair size={20} />, href: '/admin/catmouse' },
   { id: 'posts', label: '公告管理', icon: <Megaphone size={20} />, href: '/admin/posts' },
   { id: 'settings', label: '系统设置', icon: <Settings size={20} />, href: '/admin/settings' },
+  { id: 'author', label: '关于作者', icon: <UserRound size={20} />, href: '/admin/author' },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -110,7 +112,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
         </div>
 
-        <nav className="flex-1 px-2 py-4">
+        <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-4">
           {sidebarMenu.map((item, index) => {
             const isActive = pathname === item.href
             return (
