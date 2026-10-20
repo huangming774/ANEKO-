@@ -5,6 +5,7 @@ import { ImagePlus, Save, Settings } from 'lucide-react'
 import { apiRequest } from '@/lib/client-api'
 import { uploadImageFile } from '@/lib/client-upload'
 import type { SiteSettings } from '@/lib/app-types'
+import SearchIndexSettings from '@/components/SearchIndexSettings'
 
 const defaults: Partial<SiteSettings> = {
   club_name: 'ANEKO动漫社',
@@ -87,6 +88,8 @@ export default function SettingsPage() {
           <p className="text-sm text-gray-500">管理社团信息、网站配置和缓存开关</p>
         </div>
       </div>
+
+      <SearchIndexSettings />
 
       {message && (
         <div

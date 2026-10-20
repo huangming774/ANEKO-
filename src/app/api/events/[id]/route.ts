@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, readStringArray, requireAdmin } from '@/lib/api-utils'
 import { clearCache } from '@/lib/cache'
+import { syncSearchRecord } from '@/lib/search'
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   const supabase = await createClient()
@@ -31,6 +32,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 
   await clearCache('events')
+  await syncSearchRecord(supabase, 'event', params.id)
   return ok(data)
 }
 
@@ -46,5 +48,6 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
   }
 
   await clearCache('events')
+  await syncSearchRecord(supabase, 'event', params.id)
   return ok({ success: true })
 }

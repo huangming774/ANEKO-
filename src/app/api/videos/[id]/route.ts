@@ -5,6 +5,7 @@ import { fetchBilibiliVideoInfo } from '@/lib/bilibili'
 import { deleteR2Object, deleteR2ObjectByUrl } from '@/lib/r2'
 import { clearCache } from '@/lib/cache'
 import type { Database } from '@/database.types'
+import { syncSearchRecord } from '@/lib/search'
 
 type VideoUpdate = Database['public']['Tables']['videos']['Update']
 
@@ -80,6 +81,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 
   await clearCache('videos')
+  await syncSearchRecord(supabase, 'video', params.id)
   return ok(data)
 }
 
@@ -114,5 +116,6 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
   await deleteR2ObjectByUrl(video?.cover)
 
   await clearCache('videos')
+  await syncSearchRecord(supabase, 'video', params.id)
   return ok({ success: true })
 }

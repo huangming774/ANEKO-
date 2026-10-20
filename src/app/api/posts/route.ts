@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, requireAdmin } from '@/lib/api-utils'
 import { cachedJSON, clearCache } from '@/lib/cache'
+import { syncSearchRecord } from '@/lib/search'
 
 function normalizePostError(error: { message?: string; code?: string }) {
   if (error.code === 'PGRST204' || error.message?.includes("'image'")) {
@@ -157,6 +158,7 @@ export async function POST(request: Request) {
   }
 
   await clearCache('posts')
+  if (data?.id) await syncSearchRecord(supabase, 'post', String(data.id))
   return ok(data ? { ...data, image: 'image' in data ? data.image : '' } : data, { status: 201 })
 }
 

@@ -3,6 +3,7 @@ import { fail, normalizeSupabaseError, ok, readString, requireAdmin } from '@/li
 import { extractBilibiliBvid } from '@/lib/video'
 import { fetchBilibiliVideoInfo } from '@/lib/bilibili'
 import { cachedJSON, clearCache } from '@/lib/cache'
+import { syncSearchRecord } from '@/lib/search'
 
 export async function GET(request: Request) {
   const supabase = await createClient()
@@ -102,5 +103,6 @@ export async function POST(request: Request) {
   }
 
   await clearCache('videos')
+  if (data?.id) await syncSearchRecord(supabase, 'video', String(data.id))
   return ok(data, { status: 201 })
 }

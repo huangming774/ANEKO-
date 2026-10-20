@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, requireAdmin, requireUser } from '@/lib/api-utils'
 import { clearCache } from '@/lib/cache'
 import { deleteR2ObjectByUrl } from '@/lib/r2'
+import { syncSearchRecord } from '@/lib/search'
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   const supabase = await createClient()
@@ -38,6 +39,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 
   await clearCache('works')
+  await syncSearchRecord(supabase, 'work', params.id)
   return ok(data)
 }
 
@@ -62,5 +64,6 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
   await deleteR2ObjectByUrl(oldWork?.image)
 
   await clearCache('works')
+  await syncSearchRecord(supabase, 'work', params.id)
   return ok({ success: true })
 }

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, readStringArray, requireAdmin } from '@/lib/api-utils'
 import { cachedJSON, clearCache } from '@/lib/cache'
+import { syncSearchRecord } from '@/lib/search'
 
 export async function GET() {
   const supabase = await createClient()
@@ -55,5 +56,6 @@ export async function POST(request: Request) {
   }
 
   await clearCache('events')
+  if (data?.id) await syncSearchRecord(supabase, 'event', String(data.id))
   return ok(data, { status: 201 })
 }

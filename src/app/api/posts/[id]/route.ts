@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase-server'
 import { fail, normalizeSupabaseError, ok, readString, requireAdmin } from '@/lib/api-utils'
 import { clearCache } from '@/lib/cache'
 import { deleteR2ObjectByUrl } from '@/lib/r2'
+import { syncSearchRecord } from '@/lib/search'
 
 function normalizePostError(error: { message?: string; code?: string }) {
   if (error.code === 'PGRST204' || error.message?.includes("'image'")) {
@@ -141,6 +142,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 
   await clearCache('posts')
+  await syncSearchRecord(supabase, 'post', params.id)
   return ok(data ? { ...data, image: 'image' in data ? data.image : '' } : data)
 }
 
@@ -161,5 +163,6 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
   await deleteR2ObjectByUrl(oldPost?.image)
 
   await clearCache('posts')
+  await syncSearchRecord(supabase, 'post', params.id)
   return ok({ success: true })
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -14,6 +14,7 @@ import {
   Image as ImageIcon,
   MapPin,
   Menu,
+  Search,
   Upload,
   UserPlus,
   Video,
@@ -23,6 +24,7 @@ import type { LucideIcon } from 'lucide-react'
 import { apiRequest } from '@/lib/client-api'
 import type { SiteSettings } from '@/lib/app-types'
 import AnnouncementBanner from '@/components/AnnouncementBanner'
+import SearchDialog from '@/components/SearchDialog'
 
 type NavItem = {
   name: string
@@ -49,6 +51,8 @@ const isExternalHref = (href: string) => /^https?:\/\//.test(href)
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const closeSearch = useCallback(() => setIsSearchOpen(false), [])
   const [settings, setSettings] = useState<SiteSettings | null>(null)
   const pathname = usePathname()
 
@@ -99,7 +103,7 @@ export default function Header() {
         <div aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-anime-pink to-anime-purple opacity-70" />
       )}
       <AnnouncementBanner enabled={Boolean(settings?.announcement_banner)} />
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
         <div className="relative z-20 flex h-16 items-center justify-between">
           <a href="/" className="flex min-w-0 items-center gap-2">
             <span
@@ -122,8 +126,8 @@ export default function Header() {
             </span>
           </a>
 
-          {/* 11 个栏目较宽：仅 ≥1280px 铺开胶囊导航，更窄窗口走汉堡菜单，避免挤压 */}
-          <nav className="hidden items-center gap-1 xl:flex">
+          {/* 11 个栏目较宽：仅 ≥1536px 铺开胶囊导航，更窄窗口走汉堡菜单，避免挤压 */}
+          <nav className="hidden items-center gap-1 2xl:flex">
             {navItems.map((item) => {
               const active = isActive(item)
               const external = isExternalHref(item.href)
@@ -147,7 +151,8 @@ export default function Header() {
             })}
           </nav>
 
-          <div className="hidden items-center space-x-3 xl:flex">
+          <div className="hidden items-center space-x-3 2xl:flex">
+            <button type="button" onClick={() => setIsSearchOpen(true)} aria-label="搜索站内内容" className={"flex w-44 shrink-0 items-center gap-2 rounded-full border border-current/20 px-3 py-2 text-sm transition-colors " + (solidBar ? 'text-gray-700 hover:bg-anime-pink/10 hover:text-anime-pink' : 'text-white hover:bg-white/15')}><Search size={18} /><span>搜索站内内容…</span></button>
             <a
               href="/login"
               className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 hover:scale-105 ${
@@ -160,9 +165,11 @@ export default function Header() {
             </a>
           </div>
 
+          <div className="flex shrink-0 items-center gap-1 2xl:hidden">
+          <button type="button" onClick={() => { setIsMobileMenuOpen(false); setIsSearchOpen(true) }} aria-label="搜索站内内容" className={"flex h-10 w-10 items-center justify-center rounded-full transition-colors " + (solidBar ? 'text-gray-800 hover:bg-gray-100' : 'text-white hover:bg-white/15')}><Search size={22} /></button>
           <button
             type="button"
-            className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors xl:hidden ${
+            className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors 2xl:hidden ${
               solidBar ? 'text-gray-800 hover:bg-gray-100' : 'text-white hover:bg-white/15'
             }`}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -182,6 +189,7 @@ export default function Header() {
               </motion.span>
             </AnimatePresence>
           </button>
+          </div>
         </div>
 
         {/* 移动端菜单：遮罩 + 滑入面板 + 逐项入场 */}
@@ -194,7 +202,7 @@ export default function Header() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="fixed inset-0 top-16 z-10 bg-black/40 backdrop-blur-[2px] xl:hidden"
+                className="fixed inset-0 top-16 z-10 bg-black/40 backdrop-blur-[2px] 2xl:hidden"
                 onClick={() => setIsMobileMenuOpen(false)}
                 aria-hidden
               />
@@ -204,7 +212,7 @@ export default function Header() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -16 }}
                 transition={{ duration: 0.24, ease: 'easeOut' }}
-                className="relative z-20 overflow-hidden rounded-b-3xl bg-white shadow-2xl xl:hidden"
+                className="relative z-20 overflow-hidden rounded-b-3xl bg-white shadow-2xl 2xl:hidden"
               >
                 <div className="h-1 bg-gradient-to-r from-anime-pink to-anime-purple" />
                 <nav className="max-h-[calc(100dvh-7rem)] space-y-1 overflow-y-auto px-3 pb-4 pt-3">
@@ -260,6 +268,7 @@ export default function Header() {
           )}
         </AnimatePresence>
       </div>
+      <SearchDialog open={isSearchOpen} onClose={closeSearch} />
     </header>
   )
 }
